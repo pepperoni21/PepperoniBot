@@ -6,7 +6,7 @@ pub struct Handler;
 
 #[async_trait]
 impl EventHandler for Handler {
-    async fn ready(&self, _ctx: Context, _ready: Ready) {
-        core::load().await;
+    async fn ready(&self, ctx: Context, _ready: Ready) {
+        core::load(ctx.http).await;
     }
 }

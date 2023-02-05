@@ -9,6 +9,7 @@ dependencies = [
  "dotenv",
  "log",
  "mongodb",
+ "rand",
  "serde",
  "serenity",
  "tokio",
