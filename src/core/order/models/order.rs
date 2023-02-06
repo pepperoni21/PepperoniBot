@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 
-use crate::core::review::review::Review;
+use crate::core::review::models::review::Review;
 
 use super::{order_type::OrderType, order_state::{OrderState}, order_assets::OrderAssets};
 

@@ -31,8 +31,8 @@ impl Bot {
             .parse()
             .expect("GUILD_ID is not a valid ID"));
 
-        self.order_manager.load(context_http, guild_id).await;
-        self.review_manager.load().await;
+        self.order_manager.load(&context_http, guild_id).await;
+        self.review_manager.load(&context_http).await;
     }
 
 }
