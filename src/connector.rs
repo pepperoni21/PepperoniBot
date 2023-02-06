@@ -2,7 +2,7 @@ use std::env;
 
 use serenity::{Client, prelude::GatewayIntents, framework::StandardFramework};
 
-use crate::event_handler;
+use crate::bot;
 
 pub async fn connect() {
     let framework = StandardFramework::new();
@@ -11,7 +11,7 @@ pub async fn connect() {
 
     let mut client = Client::builder(token, intents)
         .framework(framework)
-        .event_handler(event_handler::Handler)
+        .event_handler(bot::Bot::new().await)
         .await
         .expect("Error creating client");
 

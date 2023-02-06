@@ -1,5 +1,6 @@
 use mongodb::{Client, options::ClientOptions, Database};
 
+#[derive(Clone)]
 pub struct DBInfo {
     pub mongo_client: Client,
     pub db: Database
