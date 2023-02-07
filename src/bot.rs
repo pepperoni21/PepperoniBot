@@ -1,13 +1,12 @@
 use std::env;
 
-use serenity::{async_trait, prelude::{EventHandler, Context}, model::prelude::{Ready, GuildId}};
+use serenity::{async_trait, prelude::{EventHandler, Context}, model::prelude::{Ready, GuildId, interaction::Interaction}};
 
-use crate::{core::{db::{self, DBInfo}, order::order_manager::OrderManager, review::review_manager::ReviewManager}, ContextHTTP};
+use crate::{core::{order::order_manager::OrderManager, db}, ContextHTTP};
 
 pub struct Bot {
-    db_info: DBInfo,
-    order_manager: OrderManager,
-    review_manager: ReviewManager,
+    pub db_info: db::DBInfo,
+    pub order_manager: OrderManager,
 }
 
 impl Bot {
@@ -15,9 +14,8 @@ impl Bot {
     pub async fn new() -> Self {
         let db_info = db::DBInfo::new().await;
         let bot = Self {
-            db_info: db_info.clone(),
-            order_manager: OrderManager::new(&db_info.clone()).await,
-            review_manager: ReviewManager::new(),
+            db_info,
+            order_manager: OrderManager::new().await,
         };
 
         bot
@@ -32,7 +30,6 @@ impl Bot {
             .expect("GUILD_ID is not a valid ID"));
 
         self.order_manager.load(&context_http, guild_id).await;
-        self.review_manager.load(&context_http).await;
     }
 
 }
@@ -41,5 +38,11 @@ impl Bot {
 impl EventHandler for Bot {
     async fn ready(&self, ctx: Context, _ready: Ready) {
         self.load(ctx.http).await;
+    }
+
+    async fn interaction_create(&self, ctx: Context, interaction: Interaction){
+        let context_http: ContextHTTP = ctx.http;
+
+        self.order_manager.review_manager.listener.interaction_create(self, context_http.clone(), interaction).await;
     }
 }

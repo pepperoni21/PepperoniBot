@@ -11,7 +11,7 @@ pub enum OrderState {
 }
 
 impl OrderState {
-    pub fn get_name(&self) -> &str {
+    pub fn _get_name(&self) -> &str {
         match *self {
             Self::FirstPayment => "Waiting first payment",
             Self::InProgress => "In progress",
@@ -22,7 +22,7 @@ impl OrderState {
         }
     }
 
-    pub fn get_message(&self) -> Option<&str> {
+    pub fn _get_message(&self) -> Option<&str> {
         match *self {
             Self::FirstPayment => Some("Please process the first payment of %price% USD to the following address: https://paypal.me/MaxiGiantFR"),
             Self::InProgress => Some("Your order is in progress..."),
@@ -33,7 +33,7 @@ impl OrderState {
         }
     }
 
-    pub fn get_action(&self) -> Option<&str> {
+    pub fn _get_action(&self) -> Option<&str> {
         match *self {
             Self::FirstPayment => Some("order:first-payment"),
             Self::InProgress => Some("order:done"),
@@ -44,7 +44,7 @@ impl OrderState {
         }
     }
 
-    pub fn get_action_row_label(&self) -> Option<&str> {
+    pub fn _get_action_row_label(&self) -> Option<&str> {
         match *self {
             Self::FirstPayment => Some("Set first payment paid"),
             Self::InProgress => Some("Set as done"),

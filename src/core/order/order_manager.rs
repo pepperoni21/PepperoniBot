@@ -1,24 +1,24 @@
-use mongodb::Collection;
 use serenity::model::prelude::GuildId;
 
-use crate::{core::db::DBInfo, ContextHTTP};
+use crate::ContextHTTP;
 
-use super::{models::order::Order, command::order_command};
+use super::{command::order_command, review::review_manager::ReviewManager};
 
 pub struct OrderManager {
-    pub orders_collection: Collection<Order>
+    pub review_manager: ReviewManager,
 }
 
 impl OrderManager {
-    pub async fn new(db_info: &DBInfo) -> Self {
-        let orders_collection = db_info.db.collection("orders");
+    pub async fn new() -> Self {
+        let review_manager = ReviewManager::new();
         let order_manager = Self {
-            orders_collection
+            review_manager,
         };
         order_manager
     }
 
     pub async fn load(&self, context_http: &ContextHTTP, guild_id: GuildId) {
         order_command::load_command(context_http, &guild_id).await;
+        self.review_manager.load(&context_http).await;
     }
 }

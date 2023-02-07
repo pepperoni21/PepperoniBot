@@ -10,7 +10,7 @@ pub enum ReviewRating {
 }
 
 impl ReviewRating {
-    pub fn get_name(&self) -> &str {
+    pub fn _get_name(&self) -> &str {
         match *self {
             Self::OneStar => "1",
             Self::TwoStars => "2",

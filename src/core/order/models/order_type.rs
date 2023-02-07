@@ -9,7 +9,7 @@ pub enum OrderType {
 }
 
 impl OrderType {
-    pub fn get_display_name(&self) -> &str {
+    pub fn _get_display_name(&self) -> &str {
         match *self {
             Self::PLUGIN => "Plugin",
             Self::MOD => "Mod",

@@ -4,7 +4,7 @@ use super::review_rating::ReviewRating;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Review {
-    rating: ReviewRating,
-    comment: String,
-    message_id: u64
+    pub rating: ReviewRating,
+    pub comment: String,
+    pub message_id: u64
 }
