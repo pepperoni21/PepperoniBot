@@ -24,7 +24,7 @@ impl ReviewManager {
         self.generate_message(context_http).await;
     }
 
-    async fn generate_message(&self, context_http: &ContextHTTP){
+    async fn generate_message(&self, context_http: &ContextHTTP) {
         let make_review_channel_id: u64 = env::var("MAKE_REVIEW_CHANNEL_ID")
             .expect("Expected a MAKE_REVIEW_CHANNEL_ID in the environment")
             .parse()
@@ -46,7 +46,7 @@ impl ReviewManager {
         }
     }
 
-    async fn _add_review(&self, bot: &Bot, context_http: &ContextHTTP, user: User, order_id: i32, review_rating: ReviewRating, comment: String){
+    pub async fn add_review(&self, bot: &Bot, context_http: &ContextHTTP, user: &User, order_id: i32, review_rating: ReviewRating, comment: String) -> Result<(), String>{
         let db = &bot.db_info.db;
 
         let mut order: Order = Order::find_one(db, doc! {"order_id": order_id}, None).await.expect("Failed to find order").expect("Order not found");
@@ -66,7 +66,11 @@ impl ReviewManager {
                     .field("Comment", &comment, true)
                     .author(|author| author.name(&user.name).icon_url(&user.face()))
             )
-        ).await.expect("Failed to send message to review channel");
+        ).await;
+        if message.is_err() {
+            return Err("Failed to send message to review channel".to_string());
+        }
+        let message = message.unwrap();
         
         let review = Review {
             rating: review_rating,
@@ -75,6 +79,8 @@ impl ReviewManager {
         };
         order.review = Some(review);
         order.save(db, None).await.expect("Failed to save order");
+
+        Ok(())
     }
 
 }
