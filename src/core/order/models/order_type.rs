@@ -1,6 +1,7 @@
+use enum_iterator::Sequence;
 use serde::{Serialize, Deserialize};
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Sequence)]
 pub enum OrderType {
     PLUGIN,
     MOD,
@@ -9,6 +10,16 @@ pub enum OrderType {
 }
 
 impl OrderType {
+
+    pub fn get_value(&self) -> String {
+        match *self {
+            Self::PLUGIN => "plugin".to_string(),
+            Self::MOD => "mod".to_string(),
+            Self::DISCORD => "discord".to_string(),
+            Self::OTHER => "other".to_string()
+        }
+    }
+
     pub fn get_display_name(&self) -> String {
         match *self {
             Self::PLUGIN => "Plugin".to_string(),
