@@ -25,7 +25,7 @@ impl Order {
     pub fn new(order_type: OrderType, price: i32, customer_id: u64, description: String) -> Self {
         let order_id = rand::random::<i32>();
         let order_state = OrderState::FirstPayment;
-        let assets = OrderAssets;
+        let assets = OrderAssets::new();
         let review = None;
         Self {
             id: None,

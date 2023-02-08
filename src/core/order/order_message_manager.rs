@@ -1,6 +1,6 @@
 use std::env;
 
-use serenity::{builder::{CreateEmbed, CreateComponents}, model::{prelude::{GuildChannel, component::{ActionRow, ButtonStyle}}, user::User}, utils::Color, prelude::Mentionable};
+use serenity::{builder::{CreateEmbed, CreateComponents}, model::{prelude::{GuildChannel, component::ButtonStyle}, user::User}, utils::Color, prelude::Mentionable};
 
 use crate::ContextHTTP;
 
@@ -10,7 +10,7 @@ pub struct OrderMessageManager;
 
 impl OrderMessageManager {
 
-    pub async fn order_channel_message(&self, order: &Order) -> CreateEmbed {
+    pub fn order_channel_message(&self, order: &Order) -> CreateEmbed {
         let mut create_embed = CreateEmbed::default();
         create_embed.title(format!("Order #{}", order.order_id));
         create_embed.fields(vec![
@@ -21,10 +21,10 @@ impl OrderMessageManager {
         create_embed
     }
 
-    pub async fn update_channel_message(&self, context_http: &ContextHTTP, order: &Order, channel: GuildChannel) {
+    pub async fn update_channel_message(&self, context_http: &ContextHTTP, order: &Order, channel: &GuildChannel) {
         let order_channel_message_id = order.assets.order_channel_message_id.unwrap();
         let mut message = channel.message(context_http, order_channel_message_id).await.expect("Failed to get message");
-        let create_embed = self.order_channel_message(order).await;
+        let create_embed = self.order_channel_message(order);
         message.edit(context_http, |message| {
             message.embed(|embed| {
                 embed.0 = create_embed.0;
@@ -39,11 +39,20 @@ impl OrderMessageManager {
         let orders_channel = context_http.get_channel(orders_channel_id).await.expect("Failed to get channel").guild().unwrap();
         let order_list_message_id = order.assets.order_list_message_id.unwrap();
         let mut message = orders_channel.message(context_http, order_list_message_id).await.expect("Failed to get message");
+        let user = context_http.get_user(order.customer_id).await.expect("Failed to get user");
 
-        todo!("Update order list message")
+        let create_embed = self.order_list_message(order, &user, &orders_channel).await;
+        let components = self.generate_action_rows(order).await;
+
+        message.edit(context_http, |message| {
+            message.embed(|embed| {
+                embed.0 = create_embed.0;
+                embed
+            }).set_components(components)
+        }).await.expect("Failed to edit message");
     }
 
-    pub async fn send_first_payment_message(&self, context_http: &ContextHTTP, channel: GuildChannel) {
+    pub async fn send_first_payment_message(&self, context_http: &ContextHTTP, channel: &GuildChannel) {
         channel.send_message(context_http, |message|
             message.embed(|embed|
                 embed
@@ -53,7 +62,7 @@ impl OrderMessageManager {
         ).await.expect("Failed to send message");
     }
 
-    pub async fn send_done_message(&self, context_http: &ContextHTTP, channel: GuildChannel) {
+    pub async fn send_done_message(&self, context_http: &ContextHTTP, channel: &GuildChannel) {
         channel.send_message(context_http, |message|
             message.embed(|embed|
                 embed
@@ -64,7 +73,7 @@ impl OrderMessageManager {
         ).await.expect("Failed to send message");
     }
 
-    pub async fn send_second_payment_message(&self, context_http: &ContextHTTP, channel: GuildChannel) {
+    pub async fn send_second_payment_message(&self, context_http: &ContextHTTP, channel: &GuildChannel) {
         channel.send_message(context_http, |message|
             message.embed(|embed|
                 embed
@@ -108,6 +117,25 @@ impl OrderMessageManager {
         );
 
         components
+    }
+
+    pub async fn add_to_archive(&self, context_http: &ContextHTTP, order: &Order) {
+        let orders_archive_channel_id: u64 = env::var("ORDERS_ARCHIVE_CHANNEL_ID").expect("ORDERS_ARCHIVE_CHANNEL_ID must be set").parse().expect("ORDERS_ARCHIVE_CHANNEL_ID must be a number");
+        let orders_archive_channel = context_http.get_channel(orders_archive_channel_id).await.expect("Failed to get channel").guild().unwrap();
+
+        let user = context_http.get_user(order.customer_id).await.expect("Failed to get user");
+        orders_archive_channel.send_message(context_http, |message|
+            message.embed(|embed|
+                embed
+                .title(format!("Order #{}", order.order_id))
+                .fields(vec![
+                    ("Customer", user.tag(), true),
+                    ("Type", order.order_type.get_display_name(), false),
+                    ("Price", format!("{}$", order.price.to_string()), false),
+                    ("State", order.order_state.get_name(), false),
+                ])
+            )
+        ).await.expect("Failed to send message");
     }
 
 }
