@@ -15,14 +15,14 @@ pub struct Order {
     pub order_type: OrderType,
     pub order_state: OrderState,
     pub price: i32,
-    pub customer_id: f64,
+    pub customer_id: u64,
     pub description: String,
     pub assets: OrderAssets,
     pub review: Option<Review>
 }
 
 impl Order {
-    pub fn _new(order_type: OrderType, price: i32, customer_id: f64, description: String) -> Self {
+    pub fn new(order_type: OrderType, price: i32, customer_id: u64, description: String) -> Self {
         let order_id = rand::random::<i32>();
         let order_state = OrderState::FirstPayment;
         let assets = OrderAssets;
