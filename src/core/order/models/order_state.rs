@@ -11,45 +11,45 @@ pub enum OrderState {
 }
 
 impl OrderState {
-    pub fn _get_name(&self) -> &str {
+    pub fn get_name(&self) -> String {
         match *self {
-            Self::FirstPayment => "Waiting first payment",
-            Self::InProgress => "In progress",
-            Self::SecondPayment => "Waiting second payment",
-            Self::Delivery => "Waiting delivery",
-            Self::Delivered => "Delivered",
-            Self::Canceled => "Canceled"
+            Self::FirstPayment => "Waiting first payment".to_string(),
+            Self::InProgress => "In progress".to_string(),
+            Self::SecondPayment => "Waiting second payment".to_string(),
+            Self::Delivery => "Waiting delivery".to_string(),
+            Self::Delivered => "Delivered".to_string(),
+            Self::Canceled => "Canceled".to_string()
         }
     }
 
-    pub fn _get_message(&self) -> Option<&str> {
+    pub fn get_message(&self) -> Option<String> {
         match *self {
-            Self::FirstPayment => Some("Please process the first payment of %price% USD to the following address: https://paypal.me/MaxiGiantFR"),
-            Self::InProgress => Some("Your order is in progress..."),
-            Self::SecondPayment => Some("Please process the second payment of %price% USD to the following address: https://paypal.me/MaxiGiantFR"),
-            Self::Delivery => Some("Your delivery is coming..."),
+            Self::FirstPayment => Some("Please process the first payment of %price% USD to the following address: https://paypal.me/MaxiGiantFR".to_string()),
+            Self::InProgress => Some("Your order is in progress...".to_string()),
+            Self::SecondPayment => Some("Please process the second payment of %price% USD to the following address: https://paypal.me/MaxiGiantFR".to_string()),
+            Self::Delivery => Some("Your delivery is coming...".to_string()),
             Self::Delivered => None,
             Self::Canceled => None
         }
     }
 
-    pub fn _get_action(&self) -> Option<&str> {
+    pub fn get_action(&self) -> Option<String> {
         match *self {
-            Self::FirstPayment => Some("order:first-payment"),
-            Self::InProgress => Some("order:done"),
-            Self::SecondPayment => Some("order:second-payment"),
-            Self::Delivery => Some("order:delivery"),
+            Self::FirstPayment => Some("order:first-payment".to_string()),
+            Self::InProgress => Some("order:done".to_string()),
+            Self::SecondPayment => Some("order:second-payment".to_string()),
+            Self::Delivery => Some("order:delivery".to_string()),
             Self::Delivered => None,
             Self::Canceled => None
         }
     }
 
-    pub fn _get_action_row_label(&self) -> Option<&str> {
+    pub fn get_action_row_label(&self) -> Option<String> {
         match *self {
-            Self::FirstPayment => Some("Set first payment paid"),
-            Self::InProgress => Some("Set as done"),
-            Self::SecondPayment => Some("Set second payment paid"),
-            Self::Delivery => Some("Set as delivered"),
+            Self::FirstPayment => Some("Set first payment paid".to_string()),
+            Self::InProgress => Some("Set as done".to_string()),
+            Self::SecondPayment => Some("Set second payment paid".to_string()),
+            Self::Delivery => Some("Set as delivered".to_string()),
             Self::Delivered => None,
             Self::Canceled => None
         }

@@ -9,12 +9,12 @@ pub enum OrderType {
 }
 
 impl OrderType {
-    pub fn _get_display_name(&self) -> &str {
+    pub fn get_display_name(&self) -> String {
         match *self {
-            Self::PLUGIN => "Plugin",
-            Self::MOD => "Mod",
-            Self::DISCORD => "Discord",
-            Self::OTHER => "Other"
+            Self::PLUGIN => "Plugin".to_string(),
+            Self::MOD => "Mod".to_string(),
+            Self::DISCORD => "Discord".to_string(),
+            Self::OTHER => "Other".to_string()
         }
     }
 }
