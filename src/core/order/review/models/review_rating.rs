@@ -3,11 +3,11 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Sequence)]
 pub enum ReviewRating {
-    OneStar,
-    TwoStars,
-    ThreeStars,
+    FiveStars,
     FourStars,
-    FiveStars
+    ThreeStars,
+    TwoStars,
+    OneStar,
 }
 
 impl ReviewRating {

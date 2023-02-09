@@ -15,7 +15,7 @@ impl OrderMessageManager {
         create_embed.title(format!("Order #{}", order.order_id));
         create_embed.fields(vec![
             ("Type", order.order_type.get_display_name(), true),
-            ("Price", format!("{}USD", order.price.to_string()), true),
+            ("Price", format!("{} USD", order.price.to_string()), true),
         ]);
         create_embed.description(order.order_state.get_message().unwrap().replace("%price%", &(order.price / 2).to_string()));
         create_embed

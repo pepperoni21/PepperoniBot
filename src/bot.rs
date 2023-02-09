@@ -44,6 +44,7 @@ impl EventHandler for Bot {
         let context_http: ContextHTTP = ctx.http;
 
         self.order_manager.review_manager.listener.interaction_create(self, &context_http, interaction.clone()).await;
+        self.order_manager.listener.on_interaction(self, &context_http, interaction.clone()).await;
         order_command_executor::on_interaction(&self, &context_http, interaction.clone()).await;
     }
 }

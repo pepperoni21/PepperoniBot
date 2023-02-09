@@ -1,15 +1,16 @@
-use std::env::{self, var};
+use std::env;
 
 use serenity::model::{prelude::{GuildId, PermissionOverwrite, PermissionOverwriteType, GuildChannel}, user::User, Permissions};
 use wither::{Model, bson::doc};
 
 use crate::{ContextHTTP, bot::Bot};
 
-use super::{command::order_command, review::review_manager::ReviewManager, models::{order::Order, order_type::OrderType, order_state::OrderState}, order_message_manager::OrderMessageManager};
+use super::{command::order_command, review::review_manager::ReviewManager, models::{order::Order, order_type::OrderType, order_state::OrderState}, order_message_manager::OrderMessageManager, order_listener::OrderListener};
 
 pub struct OrderManager {
     pub review_manager: ReviewManager,
     pub message_manager: OrderMessageManager,
+    pub listener: OrderListener,
 }
 
 impl OrderManager {
@@ -18,6 +19,7 @@ impl OrderManager {
         let order_manager = Self {
             review_manager,
             message_manager: OrderMessageManager,
+            listener: OrderListener,
         };
         order_manager
     }
@@ -78,14 +80,14 @@ impl OrderManager {
 
     async fn end_order(&self, context_http: &ContextHTTP, order: &Order) {
         let order_channel_id = order.assets.order_channel_id;
-        let order_channel_message_id = order.assets.order_channel_message_id;
+        let order_list_message_id = order.assets.order_list_message_id;
 
         if order_channel_id.is_some() {
             let order_channel = context_http.get_channel(order_channel_id.unwrap()).await.expect("Failed to get order channel").guild().expect("Order channel is not a guild channel");
             order_channel.delete(context_http).await.expect("Failed to delete order channel");
-        } if order_channel_message_id.is_some() {
+        } if order_list_message_id.is_some() {
             let orders_list_channel = self.get_order_list_channel(context_http).await;
-            let order_list_message = orders_list_channel.message(context_http, order_channel_message_id.unwrap()).await.expect("Failed to get order list message");
+            let order_list_message = orders_list_channel.message(context_http, order_list_message_id.unwrap()).await.expect("Failed to get order list message");
             order_list_message.delete(context_http).await.expect("Failed to delete order list message");
         }
     }
@@ -145,17 +147,17 @@ impl OrderManager {
         if order.order_state != OrderState::Delivery {
             return;
         }
-        order.order_state = OrderState::Delivered;
 
-        let order_channel_id = order.assets.order_channel_id.unwrap();
-        let order_channel = context_http.get_channel(order_channel_id).await.expect("Failed to get order channel").guild().expect("Order channel is not a guild channel");
+        self.end_order(context_http, order).await;
+
+        order.order_state = OrderState::Delivered;
 
         self.message_manager.add_to_archive(context_http, order).await;
 
         order.save(&bot.db_info.db, None).await.expect("Failed to save order");
     }
 
-    pub async fn fetch_order(bot: &Bot, order_id: i32) -> Order {
+    pub async fn fetch_order(&self, bot: &Bot, order_id: i32) -> Order {
         Order::find_one(&bot.db_info.db, doc!{
             "order_id": order_id
         }, None).await.expect("Failed to fetch order").expect("Order not found")

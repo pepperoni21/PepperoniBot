@@ -1,5 +1,5 @@
 use enum_iterator::all;
-use serenity::{model::prelude::{interaction::{Interaction, InteractionResponseType, message_component::MessageComponentInteraction}, component::InputTextStyle}, futures::TryStreamExt, builder::CreateSelectMenu};
+use serenity::{model::prelude::{interaction::{Interaction, InteractionResponseType, message_component::MessageComponentInteraction, InteractionType, modal::ModalSubmitInteraction}, component::{InputTextStyle, ActionRowComponent}}, futures::TryStreamExt, builder::CreateSelectMenu};
 use wither::{Model, bson::{doc, to_bson}};
 
 use crate::{ContextHTTP, bot::Bot, core::order::models::{order::Order, order_state::OrderState}};
@@ -11,32 +11,36 @@ pub struct ReviewListener;
 impl ReviewListener {
 
     pub async fn interaction_create(&self, bot: &Bot, context_http: &ContextHTTP, interaction: Interaction) {
-        let message_component_interaction = interaction.message_component();
-        if message_component_interaction.is_none() {
-            return;
-        }
-        let message_component_interaction = message_component_interaction.unwrap();
-        let component_id = message_component_interaction.data.custom_id.as_str();
+        if interaction.kind() == InteractionType::MessageComponent {
+            let interaction = interaction.message_component().unwrap();
 
-        match component_id {
-            "review" => self.on_review_interaction(bot, &context_http, &message_component_interaction).await,
-            "review-select-order" => self.on_review_select_order(bot, &context_http, &message_component_interaction).await,
-            _ => {}
-        }
+            let component_id = interaction.data.custom_id.as_str();
 
-        if component_id.starts_with("review-select-rating:") {
-            self.on_review_select_rating(bot, &context_http, &message_component_interaction).await;
-        } else if component_id.starts_with("review-text-input:"){
-            self.on_review_submit(bot, &context_http, &message_component_interaction).await;
+            match component_id {
+                "review" => self.on_review_interaction(bot, &context_http, &interaction).await,
+                "review-select-order" => self.on_review_select_order(bot, &context_http, &interaction).await,
+                _ => {}
+            }
+
+            if component_id.starts_with("review-select-rating:") {
+                self.on_review_select_rating(bot, &context_http, &interaction).await;
+            }
+        } else if interaction.kind() == InteractionType::ModalSubmit {
+            let interaction = interaction.modal_submit().unwrap();
+
+            let component_id = interaction.data.custom_id.as_str();
+
+            if component_id.starts_with("review-text-input:"){
+                self.on_review_submit(bot, &context_http, &interaction).await;
+            }
         }
     }
 
     async fn on_review_interaction(&self, bot: &Bot, context_http: &ContextHTTP, interaction: &MessageComponentInteraction){
         let user = &interaction.user;
-
         let orders_cursor = Order::find(&bot.db_info.db, doc! {
-            "customer_id": user.id.to_string(),
-            "state": to_bson(&OrderState::Delivered).unwrap(),
+            "customer_id": to_bson(&user.id.0).unwrap(),
+            "order_state": to_bson(&OrderState::Delivered).unwrap(),
             "review": to_bson(&None::<Review>).unwrap()
         }, None).await.expect("Failed to find orders");
         let orders: Vec<Order> = orders_cursor.try_collect().await.expect("Failed to collect orders");
@@ -89,14 +93,15 @@ impl ReviewListener {
                             .custom_id(format!("review-select-rating:{}", order_id))
                             .placeholder("Select a rating");
 
-                            all::<ReviewRating>().into_iter().for_each(|rating| {
-                                select_menu.options(|options|
+                            select_menu.options(|options| {
+                                all::<ReviewRating>().into_iter().for_each(|rating| {
                                     options.create_option(|option|
                                         option
                                         .value(rating.get_name())
                                         .label(rating.get_emoji())
-                                    )
-                                );
+                                    );
+                                });
+                                options
                             });
 
                             select_menu
@@ -116,7 +121,7 @@ impl ReviewListener {
             response.kind(InteractionResponseType::Modal).interaction_response_data(|data|
                 data
                 .custom_id(format!("review-text-input:{}:{}", order_id, review_rating.get_name()))
-                .content(format!("{} #{}", review_rating.get_emoji(), order_id))
+                .title(format!("{} #{}", review_rating.get_emoji(), order_id))
                 .components(|components|
                     components.create_action_row(|action_row|
                         action_row.create_input_text(|input_text|
@@ -132,12 +137,16 @@ impl ReviewListener {
         ).await.expect("Failed to send interaction response");
     }
 
-    async fn on_review_submit(&self, bot: &Bot, context_http: &ContextHTTP, interaction: &MessageComponentInteraction) {
+    async fn on_review_submit(&self, bot: &Bot, context_http: &ContextHTTP, interaction: &ModalSubmitInteraction) {
         let user = &interaction.user;
         let split = interaction.data.custom_id.as_str().split(":").collect::<Vec<&str>>();
         let order_id: i32 = split[1].parse().unwrap();
         let review_rating = ReviewRating::from_name(split[2]).unwrap();
-        let comment = interaction.data.values.get(0).unwrap().as_str();
+        let comment = interaction.data.components.get(0).unwrap().components.get(0).unwrap();
+        let comment = match comment {
+            ActionRowComponent::InputText(input) => input.value.clone(),
+            _ => return,
+        };
 
         let result = bot.order_manager.review_manager
         .add_review(bot, context_http, user, order_id, review_rating, comment.to_string()).await;
