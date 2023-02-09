@@ -10,8 +10,7 @@ pub struct ReviewListener;
 
 impl ReviewListener {
 
-    pub async fn interaction_create(&self, bot: &Bot, context_http: ContextHTTP, interaction: Interaction) {
-        println!("Interaction: {:?}", interaction.kind());
+    pub async fn interaction_create(&self, bot: &Bot, context_http: &ContextHTTP, interaction: Interaction) {
         let message_component_interaction = interaction.message_component();
         if message_component_interaction.is_none() {
             return;
@@ -34,7 +33,7 @@ impl ReviewListener {
 
     async fn on_review_interaction(&self, bot: &Bot, context_http: &ContextHTTP, interaction: &MessageComponentInteraction){
         let user = &interaction.user;
-        
+
         let orders_cursor = Order::find(&bot.db_info.db, doc! {
             "customer_id": user.id.to_string(),
             "state": to_bson(&OrderState::Delivered).unwrap(),
@@ -44,15 +43,15 @@ impl ReviewListener {
 
         if orders.is_empty() {
             interaction.create_interaction_response(context_http, |response| {
-                response.kind(InteractionResponseType::Pong).interaction_response_data(|data| {
-                    data.content("You don't have any orders to review")
+                response.kind(InteractionResponseType::ChannelMessageWithSource).interaction_response_data(|data| {
+                    data.content("You don't have any orders to review").ephemeral(true)
                 })
             }).await.expect("Failed to send interaction response");
             return;
         }
 
         interaction.create_interaction_response(context_http, |response|
-            response.kind(InteractionResponseType::Pong).interaction_response_data(|data|
+            response.kind(InteractionResponseType::ChannelMessageWithSource).interaction_response_data(|data|
                 data.ephemeral(true).content("Select an order to review")
                     .components(|components| {
                         components.create_action_row(|action_row| {
@@ -82,7 +81,7 @@ impl ReviewListener {
     async fn on_review_select_order(&self, _bot: &Bot, context_http: &ContextHTTP, interaction: &MessageComponentInteraction){
         let order_id: i32 = interaction.data.values.get(0).unwrap().parse().unwrap();
         interaction.create_interaction_response(context_http, |response|
-            response.kind(InteractionResponseType::Pong).interaction_response_data(|data|
+            response.kind(InteractionResponseType::ChannelMessageWithSource).interaction_response_data(|data|
                 data.ephemeral(true).content("Select a rating").components(|components|
                     components.create_action_row(|action_row|
                         action_row.create_select_menu(|select_menu| {
@@ -148,7 +147,7 @@ impl ReviewListener {
             Err(_) => "An error occurred while adding your review."
         };
         interaction.create_interaction_response(context_http, |response|
-            response.kind(InteractionResponseType::Pong).interaction_response_data(|data|
+            response.kind(InteractionResponseType::ChannelMessageWithSource).interaction_response_data(|data|
                 data.ephemeral(true).content(response_content)
             )
         ).await.expect("Failed to send interaction response");

@@ -28,4 +28,14 @@ impl OrderType {
             Self::OTHER => "Other".to_string()
         }
     }
+
+    pub fn from_value(value: &str) -> OrderType {
+        match value {
+            "plugin" => Self::PLUGIN,
+            "mod" => Self::MOD,
+            "discord" => Self::DISCORD,
+            "other" => Self::OTHER,
+            _ => Self::OTHER
+        }
+    }
 }

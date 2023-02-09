@@ -38,7 +38,7 @@ impl OrderManager {
         let channel = guild.create_channel(context_http, |channel| {
             channel.name(format!("order-{}", order.order_id));
             channel.category(orders_category_id);
-            
+
             let permissions = vec![PermissionOverwrite {
                 allow: Permissions::SEND_MESSAGES,
                 deny: Permissions::empty(),
@@ -66,7 +66,7 @@ impl OrderManager {
         ).await.expect("Failed to send message");
         order.assets.order_channel_id = Some(*channel.id.as_u64());
         order.assets.order_list_message_id = Some(*message.id.as_u64());
-        order.save(&bot.db_info.db, None);
+        order.save(&bot.db_info.db, None).await.expect("Failed to save order");
     }
 
     pub async fn cancel_order(&self, bot: &Bot, context_http: &ContextHTTP, order: &mut Order) {
@@ -95,7 +95,7 @@ impl OrderManager {
             return;
         }
         order.order_state = OrderState::InProgress;
-        
+
         let order_channel_id = order.assets.order_channel_id.unwrap();
         let order_channel = context_http.get_channel(order_channel_id).await.expect("Failed to get order channel").guild().expect("Order channel is not a guild channel");
 
@@ -104,7 +104,7 @@ impl OrderManager {
         msg_mng.send_first_payment_message(context_http, &order_channel).await;
         msg_mng.update_order_list_message(context_http, &order).await;
 
-        order.save(&bot.db_info.db, None).await;
+        order.save(&bot.db_info.db, None).await.expect("Failed to save order");
     }
 
     pub async fn set_done(&self, bot: &Bot, context_http: &ContextHTTP, order: &mut Order) {
@@ -121,7 +121,7 @@ impl OrderManager {
         msg_mng.send_done_message(context_http, &order_channel).await;
         msg_mng.update_order_list_message(context_http, &order).await;
 
-        order.save(&bot.db_info.db, None).await;
+        order.save(&bot.db_info.db, None).await.expect("Failed to save order");
     }
 
     pub async fn validate_second_payment(&self, bot: &Bot, context_http: &ContextHTTP, order: &mut Order) {
@@ -138,7 +138,7 @@ impl OrderManager {
         msg_mng.send_second_payment_message(context_http, &order_channel).await;
         msg_mng.update_order_list_message(context_http, &order).await;
 
-        order.save(&bot.db_info.db, None).await;
+        order.save(&bot.db_info.db, None).await.expect("Failed to save order");
     }
 
     pub async fn set_delivered(&self, bot: &Bot, context_http: &ContextHTTP, order: &mut Order) {
@@ -152,7 +152,7 @@ impl OrderManager {
 
         self.message_manager.add_to_archive(context_http, order).await;
 
-        order.save(&bot.db_info.db, None).await;
+        order.save(&bot.db_info.db, None).await.expect("Failed to save order");
     }
 
     pub async fn fetch_order(bot: &Bot, order_id: i32) -> Order {
