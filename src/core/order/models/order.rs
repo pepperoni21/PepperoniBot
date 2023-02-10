@@ -1,5 +1,3 @@
-use std::cmp::max;
-
 use serde::{Serialize, Deserialize};
 use wither::{bson::{oid::ObjectId, doc}, Model};
 

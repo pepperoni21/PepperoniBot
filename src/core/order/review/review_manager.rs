@@ -50,16 +50,16 @@ impl ReviewManager {
         let db = &bot.db_info.db;
 
         let mut order: Order = Order::find_one(db, doc! {"order_id": order_id}, None).await.expect("Failed to find order").expect("Order not found");
-        
-        let review_channel_id: u64 = env::var("REVIEW_CHANNEL_ID")
-            .expect("Expected a REVIEW_CHANNEL_ID in the environment")
+
+        let reviews_channel_id: u64 = env::var("REVIEWS_CHANNEL_ID")
+            .expect("Expected a REVIEWS_CHANNEL_ID in the environment")
             .parse()
-            .expect("REVIEW_CHANNEL_ID is not a valid ID");
-        let review_channel = context_http.get_channel(review_channel_id).await.expect("Failed to get review channel").guild().expect("Failed to get review channel");
+            .expect("REVIEWS_CHANNEL_ID is not a valid ID");
+        let reviews_channel = context_http.get_channel(reviews_channel_id).await.expect("Failed to get review channel").guild().expect("Failed to get review channel");
 
 
-        let message = review_channel.send_message(context_http, |message|
-            message.embed(|embed| 
+        let message = reviews_channel.send_message(context_http, |message|
+            message.embed(|embed|
                 embed.title(format!("Review #{}", order_id))
                     .field("Customer", user.mention(), false)
                     .field("Rating", review_rating.get_emoji(), false)
@@ -71,7 +71,7 @@ impl ReviewManager {
             return Err("Failed to send message to review channel".to_string());
         }
         let message = message.unwrap();
-        
+
         let review = Review {
             rating: review_rating,
             comment,
