@@ -13,20 +13,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "PepperoniBot"
-version = "0.1.0"
-dependencies = [
- "dotenv",
- "enum-iterator",
- "log",
- "rand",
- "serde",
- "serenity",
- "tokio",
- "wither",
-]
-
-[[package]]
 name = "adler"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1065,6 +1051,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "271779f35b581956db91a3e55737327a03aa051e90b1c47aeb189508533adfd7"
 dependencies = [
  "digest",
+]
+
+[[package]]
+name = "pepperoni_bot"
+version = "0.1.0"
+dependencies = [
+ "dotenv",
+ "enum-iterator",
+ "log",
+ "rand",
+ "serde",
+ "serenity",
+ "tokio",
+ "wither",
 ]
 
 [[package]]
