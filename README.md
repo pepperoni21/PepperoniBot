@@ -5,7 +5,7 @@
 - [Serenity](https://github.com/serenity-rs/serenity) (Discord API)
 - [Wither](https://github.com/thedodd/wither) (ODM for MongoDB)
 ## Deployment with Docker:
-### Simply run the following commands:
+### Simply run the following command:
 ```bash
 docker compose up -d
 ```
