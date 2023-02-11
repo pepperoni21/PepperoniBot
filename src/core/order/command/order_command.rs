@@ -27,7 +27,7 @@ pub async fn load_command(context_http: &ContextHTTP, guild_id: &GuildId){
 fn fill_create_command(option: &mut CreateApplicationCommandOption){
     option
                 .name("create")
-                .description("Create an order (1)")
+                .description("Create an order")
                 .kind(CommandOptionType::SubCommand)
                 .create_sub_option(|user_option|
                     user_option
@@ -65,7 +65,7 @@ fn fill_create_command(option: &mut CreateApplicationCommandOption){
 fn fill_cancel_command(option: &mut CreateApplicationCommandOption){
     option
     .name("cancel")
-    .description("Cancel an order (1)")
+    .description("Cancel an order")
     .kind(CommandOptionType::SubCommand)
     .create_sub_option(|id_option|
         id_option
