@@ -1,5 +1,5 @@
 # Build stage
-FROM rust:1.49-slim-buster AS BUILD
+FROM rust:slim-buster AS BUILD
 WORKDIR /usr/src/pepperoni_bot
 
 # Copy manifests
@@ -18,7 +18,7 @@ RUN rm ./target/release/deps/pepperoni_bot*
 RUN cargo build --release
 
 # Package stage
-FROM rust:1.49-slim-buster AS PACKAGE
+FROM rust:slim-buster AS PACKAGE
 
 # Copy binary
 COPY --from=BUILD /usr/src/pepperoni_bot/target/release/pepperoni_bot .
