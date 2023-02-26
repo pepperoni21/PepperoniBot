@@ -24,9 +24,9 @@ impl OrderState {
 
     pub fn get_message(&self) -> Option<String> {
         match *self {
-            Self::FirstPayment => Some("Please process the first payment of %price% USD to the following address: https://paypal.me/MaxiGiantFR".to_string()),
+            Self::FirstPayment => Some("Please process the first payment of %price% USD to the following address: pariselias00@gmail.com".to_string()),
             Self::InProgress => Some("Your order is in progress...".to_string()),
-            Self::SecondPayment => Some("Please process the second payment of %price% USD to the following address: https://paypal.me/MaxiGiantFR".to_string()),
+            Self::SecondPayment => Some("Please process the second payment of %price% USD to the following address: pariselias00@gmail.com".to_string()),
             Self::Delivery => Some("Your delivery is coming...".to_string()),
             Self::Delivered => None,
             Self::Canceled => None
