@@ -14,3 +14,6 @@ serde = { version = "1.0.152", features = ["derive"] }
 serenity = "0.11"
 tokio = { version = "1.21.2", features = ["macros", "rt-multi-thread"] }
 wither = { git = "https://github.com/pepperoni21/wither"}
+
+[[bin]]
+name = "pepperoni_bot"
