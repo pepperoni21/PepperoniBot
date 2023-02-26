@@ -43,7 +43,7 @@ fn fill_create_command(option: &mut CreateApplicationCommandOption){
                     .required(true);
 
                     all::<OrderType>().into_iter().for_each(|order_type| {
-                        type_option.add_string_choice(order_type.get_value(), order_type.get_display_name());
+                        type_option.add_string_choice(order_type.get_display_name(), order_type.get_value());
                     });
 
                     type_option
