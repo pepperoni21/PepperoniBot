@@ -5,7 +5,7 @@ use crate::core::order::review::models::review::Review;
 
 use super::{order_type::OrderType, order_state::{OrderState}, order_assets::OrderAssets};
 
-#[derive(Serialize, Deserialize, Debug, Model)]
+#[derive(Serialize, Deserialize, Debug, Model, Clone)]
 #[model(index(keys=r#"doc!{"order_id": 1}"#, options=r#"doc!{"unique": true}"#), collection_name="orders")]
 pub struct Order {
     #[serde(rename="_id", skip_serializing_if="Option::is_none")]

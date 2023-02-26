@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use serenity::model::prelude::{interaction::{Interaction, InteractionType, application_command::{ApplicationCommandInteraction, CommandDataOptionValue}, InteractionResponseType}};
 use wither::{Model, bson::doc};
 
@@ -37,7 +39,8 @@ async fn on_create_command(bot: &Bot, context_http: &ContextHTTP, interaction: A
 
     let description = sub_command_option.options.get(3).unwrap().value.as_ref().unwrap().as_str().unwrap().to_string();
 
-    bot.order_manager.create_order(bot, context_http, user, order_type, price, description).await;
+    let order_manager = &bot.order_manager;
+    order_manager.create_order(bot, context_http, Arc::new(user.clone()), order_type, price, description).await;
 
     interaction.create_interaction_response(context_http, |response| {
         response.kind(InteractionResponseType::ChannelMessageWithSource).interaction_response_data(|data| {

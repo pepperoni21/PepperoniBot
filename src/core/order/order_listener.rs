@@ -23,33 +23,35 @@ impl OrderListener {
         let order_id = (*split).get(1).unwrap().parse::<i32>().unwrap();
         let mut order = bot.order_manager.fetch_order(bot, order_id).await;
 
+        let order_state_manager = &bot.order_manager.state_manager;
+
         match action {
             "first-payment" => {
                 if order.order_state != OrderState::FirstPayment {
                     return;
                 }
-                bot.order_manager.validate_first_payment(bot, context_http, &mut order).await;
+                order_state_manager.validate_first_payment(bot, context_http, &mut order).await;
                 self.reply(context_http, &interaction, "First payment validated!").await;
             },
             "done" => {
                 if order.order_state != OrderState::InProgress {
                     return;
                 }
-                bot.order_manager.set_done(bot, context_http, &mut order).await;
+                order_state_manager.set_done(bot, context_http, &mut order).await;
                 self.reply(context_http, &interaction, "Order set as done!").await;
             },
             "second-payment" => {
                 if order.order_state != OrderState::SecondPayment {
                     return;
                 }
-                bot.order_manager.validate_second_payment(bot, context_http, &mut order).await;
+                order_state_manager.validate_second_payment(bot, context_http, &mut order).await;
                 self.reply(context_http, &interaction, "Second payment validated!").await;
             },
             "delivery" => {
                 if order.order_state != OrderState::Delivery {
                     return;
                 }
-                bot.order_manager.set_delivered(bot, context_http, &mut order).await;
+                order_state_manager.set_delivered(bot, context_http, &mut order).await;
                 self.reply(context_http, &interaction, "Order set as delivered!").await;
             },
             "cancel" => {

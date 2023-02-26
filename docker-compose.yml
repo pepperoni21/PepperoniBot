@@ -13,5 +13,7 @@ services:
       - ./db:/data/db
     networks:
       - bot-db
+    ports:
+      - 27017:27017
 networks:
   bot-db: {}
