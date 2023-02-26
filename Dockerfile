@@ -1,13 +1,26 @@
 # Build stage
-FROM rust:latest AS BUILD
+FROM rust:1.49-slim-buster AS BUILD
 WORKDIR /usr/src/pepperoni_bot
-COPY . .
-RUN cargo install --path .
+
+# Copy manifests
+COPY ./Cargo.lock ./Cargo.lock
+COPY ./Cargo.toml ./Cargo.toml
+
+# Cache dependencies
+RUN cargo build --release
+RUN rm src/*.rs
+
+# Copy source code
+COPY ./src ./src
+
+# Actual build
+RUN rm ./target/release/deps/pepperoni_bot*
+RUN cargo build --release
 
 # Package stage
-FROM  debian:bullseye AS PACKAGE
-RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
-WORKDIR /workdir
-COPY --from=BUILD /usr/local/cargo/bin/pepperoni_bot .
-COPY --from=BUILD /usr/src/pepperoni_bot/.env .
+FROM rust:1.49-slim-buster AS PACKAGE
+
+# Copy binary
+COPY --from=BUILD /usr/src/pepperoni_bot/target/release/pepperoni_bot .
+
 CMD ["./pepperoni_bot"]
