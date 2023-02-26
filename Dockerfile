@@ -20,9 +20,6 @@ RUN rm -r src
 # Copy source code
 COPY ./src ./src
 
-# Copy env file
-COPY ./.env ./.env
-
 # Actual build
 RUN rm ./target/release/deps/pepperoni_bot*
 RUN cargo build --release
@@ -34,6 +31,6 @@ FROM rust:slim-buster AS PACKAGE
 COPY --from=BUILD /usr/src/pepperoni_bot/target/release/pepperoni_bot .
 
 # Copy env file
-COPY --from=BUILD /usr/src/pepperoni_bot/.env .
+COPY .env .
 
 CMD ["./pepperoni_bot"]
