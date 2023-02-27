@@ -1,6 +1,6 @@
 use std::{env, sync::Arc};
 
-use serenity::model::{prelude::{GuildId, PermissionOverwrite, PermissionOverwriteType, GuildChannel}, user::User, Permissions};
+use serenity::model::{prelude::{GuildId, PermissionOverwrite, PermissionOverwriteType, GuildChannel, RoleId}, user::User, Permissions};
 use wither::{Model, bson::doc};
 
 use crate::{ContextHTTP, bot::Bot};
@@ -47,12 +47,17 @@ impl OrderManager {
                 om.add_customer_role(&context_http, &user).await;
             }
         });
-
+        
         let channel = guild.create_channel(context_http, |channel| {
             channel.name(format!("order-{}", order.order_id));
             channel.category(orders_category_id);
-
-            let permissions = vec![PermissionOverwrite {
+            let permissions = vec![
+            PermissionOverwrite {
+                allow: Permissions::empty(),
+                deny: Permissions::VIEW_CHANNEL,
+                kind: PermissionOverwriteType::Role(RoleId(1047410767902814238)),
+            },
+            PermissionOverwrite {
                 allow: Permissions::SEND_MESSAGES,
                 deny: Permissions::empty(),
                 kind: PermissionOverwriteType::Member(user.id),
@@ -93,13 +98,14 @@ impl OrderManager {
     }
 
     pub async fn cancel_order(self: &Arc<OrderManager>, bot: &Bot, context_http: &ContextHTTP, order: &mut Order) {
+        order.order_state = OrderState::Canceled;
+        
         tokio::spawn({
             let om: Arc<OrderManager> = Arc::clone(&self);
             let context_http = context_http.clone();
             let order = order.clone();
             async move {
                 om.end_order(&context_http, &order).await;
-                
             }
         });
         
@@ -112,7 +118,6 @@ impl OrderManager {
             }
         });
 
-        order.order_state = OrderState::Canceled;
         order.save(&bot.db_info.db, None).await.expect("Failed to save order");
     }
 

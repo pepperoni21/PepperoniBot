@@ -67,7 +67,7 @@ impl OrderStateManager {
 
         order_manager.end_order(context_http, order).await;
         order.order_state = OrderState::Delivered;
-        &order_manager.message_manager.add_to_archive(context_http, order).await;
+        let _ = &order_manager.message_manager.add_to_archive(context_http, order).await;
         order.save(&bot.db_info.db, None).await.expect("Failed to save order");
     }
 }
