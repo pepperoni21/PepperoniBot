@@ -2,7 +2,7 @@ use enum_iterator::all;
 use serenity::{model::prelude::{interaction::{Interaction, InteractionResponseType, message_component::MessageComponentInteraction, InteractionType, modal::ModalSubmitInteraction}, component::{InputTextStyle, ActionRowComponent}}, futures::TryStreamExt, builder::CreateSelectMenu};
 use wither::{Model, bson::{doc, to_bson}};
 
-use crate::{ContextHTTP, bot::Bot, core::order::models::{order::Order, order_state::OrderState}};
+use crate::{ContextHTTP, bot::Bot, core::order::{models::order::Order, state::order_state::{self, OrderState}}};
 
 use super::models::{review::Review, review_rating::ReviewRating};
 
@@ -40,7 +40,7 @@ impl ReviewListener {
         let user = &interaction.user;
         let orders_cursor = Order::find(&bot.db_info.db, doc! {
             "customer_id": to_bson(&user.id.0).unwrap(),
-            "order_state": to_bson(&OrderState::Delivered).unwrap(),
+            "order_state": order_state::DELIVERED_STATE.id(),
             "review": to_bson(&None::<Review>).unwrap()
         }, None).await.expect("Failed to find orders");
         let orders: Vec<Order> = orders_cursor.try_collect().await.expect("Failed to collect orders");

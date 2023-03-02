@@ -2,11 +2,12 @@ use std::{env, sync::Arc};
 
 use serenity::{async_trait, prelude::{EventHandler, Context}, model::prelude::{Ready, GuildId, interaction::Interaction}};
 
-use crate::{core::{order::{order_manager::OrderManager, command::order_command_executor}, db}, ContextHTTP};
+use crate::{core::{order::{order_manager::OrderManager, command::order_command_executor}, db, developers::developer_manager::DeveloperManager}, ContextHTTP};
 
 pub struct Bot {
     pub db_info: db::DBInfo,
     pub order_manager: Arc<OrderManager>,
+    pub developer_manager: DeveloperManager
 }
 
 impl Bot {
@@ -16,6 +17,7 @@ impl Bot {
         let bot = Self {
             db_info,
             order_manager: Arc::new(OrderManager::new().await),
+            developer_manager: DeveloperManager
         };
 
         bot

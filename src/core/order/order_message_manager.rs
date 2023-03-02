@@ -1,6 +1,6 @@
 use std::env;
 
-use serenity::{builder::{CreateEmbed, CreateComponents}, model::{prelude::{GuildChannel, component::ButtonStyle}, user::User}, utils::Color, prelude::Mentionable};
+use serenity::{builder::{CreateEmbed, CreateComponents}, model::{prelude::{GuildChannel, component::ButtonStyle}, user::User}, prelude::Mentionable};
 
 use crate::ContextHTTP;
 
@@ -17,7 +17,10 @@ impl OrderMessageManager {
             ("Type", order.order_type.get_display_name(), true),
             ("Price", format!("{} USD", order.price.to_string()), true),
         ]);
-        create_embed.description(order.order_state.get_message().unwrap().replace("%price%", &(order.price / 2).to_string()));
+
+        let order_state = order.get_order_state().unwrap();
+
+        create_embed.description(order_state.instruction().unwrap().replace("%price%", &(order.price / 2).to_string()));
         create_embed
     }
 
@@ -52,39 +55,11 @@ impl OrderMessageManager {
         }).await.expect("Failed to edit message");
     }
 
-    pub async fn send_first_payment_message(&self, context_http: &ContextHTTP, channel: &GuildChannel) {
-        channel.send_message(context_http, |message|
-            message.embed(|embed|
-                embed
-                .title("First payment validated!")
-                .colour(Color::DARK_GREEN)
-            )
-        ).await.expect("Failed to send message");
-    }
-
-    pub async fn send_done_message(&self, context_http: &ContextHTTP, channel: &GuildChannel) {
-        channel.send_message(context_http, |message|
-            message.embed(|embed|
-                embed
-                .title("Order done!")
-                .description("Please send the rest of the money with the link in the pinned message.")
-                .colour(Color::DARK_GREEN)
-            )
-        ).await.expect("Failed to send message");
-    }
-
-    pub async fn send_second_payment_message(&self, context_http: &ContextHTTP, channel: &GuildChannel) {
-        channel.send_message(context_http, |message|
-            message.embed(|embed|
-                embed
-                .title("Second payment validated!")
-                .colour(Color::DARK_GREEN)
-            )
-        ).await.expect("Failed to send message");
-    }
-
     pub async fn order_list_message(&self, order: &Order, user: &User, channel: &GuildChannel) -> CreateEmbed {
         let mut create_embed = CreateEmbed::default();
+
+        let order_state = order.get_order_state().unwrap();
+
         create_embed
         .title(format!("Order #{}", order.order_id))
         .fields(vec![
@@ -92,21 +67,21 @@ impl OrderMessageManager {
             ("Type", order.order_type.get_display_name(), false),
             ("Price", format!("{}$", order.price.to_string()), false),
             ("Channel", channel.mention().to_string(), false),
-            ("State", order.order_state.get_name(), false),
+            ("State", order_state.short_name(), false),
         ]);
 
         create_embed
     }
 
     pub async fn generate_action_rows(&self, order: &Order) -> CreateComponents {
-        let order_state = &order.order_state;
+        let order_state = order.get_order_state().unwrap();
         let mut components = CreateComponents::default();
 
         components.create_action_row(|row|
             row.create_button(|button|
                 button
-                .custom_id(format!("{}={}", order_state.get_action().unwrap(), order.order_id))
-                .label(order_state.get_action_row_label().unwrap())
+                .custom_id(format!("validate={}", order.order_id))
+                .label(order_state.validate_action_label().unwrap())
                 .style(ButtonStyle::Primary)
             ).create_button(|button|
                 button
@@ -124,6 +99,9 @@ impl OrderMessageManager {
         let orders_archive_channel = context_http.get_channel(orders_archive_channel_id).await.expect("Failed to get channel").guild().unwrap();
 
         let user = context_http.get_user(order.customer_id).await.expect("Failed to get user");
+
+        let order_state = order.get_order_state().unwrap();
+
         orders_archive_channel.send_message(context_http, |message|
             message.embed(|embed|
                 embed
@@ -132,7 +110,7 @@ impl OrderMessageManager {
                     ("Customer", user.tag(), true),
                     ("Type", order.order_type.get_display_name(), false),
                     ("Price", format!("{}$", order.price.to_string()), false),
-                    ("State", order.order_state.get_name(), false),
+                    ("State", order_state.short_name(), false),
                 ])
             )
         ).await.expect("Failed to send message");

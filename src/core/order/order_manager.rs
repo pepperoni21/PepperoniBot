@@ -5,12 +5,11 @@ use wither::{Model, bson::doc};
 
 use crate::{ContextHTTP, bot::Bot};
 
-use super::{command::order_command, review::review_manager::ReviewManager, models::{order::Order, order_type::OrderType, order_state::OrderState}, order_message_manager::OrderMessageManager, order_listener::OrderListener, order_state_manager::OrderStateManager};
+use super::{command::order_command, review::review_manager::ReviewManager, models::{order::Order, order_type::OrderType}, order_message_manager::OrderMessageManager, order_listener::OrderListener, state::order_state::{self, OrderState}};
 
 pub struct OrderManager {
     pub review_manager: ReviewManager,
     pub message_manager: OrderMessageManager,
-    pub state_manager: OrderStateManager,
     pub listener: OrderListener,
 }
 
@@ -20,7 +19,6 @@ impl OrderManager {
         let order_manager = Self {
             review_manager,
             message_manager: OrderMessageManager,
-            state_manager: OrderStateManager,
             listener: OrderListener,
         };
         order_manager
@@ -98,7 +96,7 @@ impl OrderManager {
     }
 
     pub async fn cancel_order(self: &Arc<OrderManager>, bot: &Bot, context_http: &ContextHTTP, order: &mut Order) {
-        order.order_state = OrderState::Canceled;
+        order.order_state_id = order_state::CANCELED_STATE.id();
         
         tokio::spawn({
             let om: Arc<OrderManager> = Arc::clone(&self);

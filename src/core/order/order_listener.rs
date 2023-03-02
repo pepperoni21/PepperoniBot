@@ -2,7 +2,7 @@ use serenity::model::prelude::interaction::{Interaction, InteractionType, Intera
 
 use crate::{bot::Bot, ContextHTTP};
 
-use super::models::order_state::OrderState;
+use super::state::order_state::{self, OrderState};
 
 pub struct OrderListener;
 
@@ -23,46 +23,23 @@ impl OrderListener {
         let order_id = (*split).get(1).unwrap().parse::<i32>().unwrap();
         let mut order = bot.order_manager.fetch_order(bot, order_id).await;
 
-        let order_state_manager = &bot.order_manager.state_manager;
+        let order_state = order.get_order_state().unwrap();
+
 
         match action {
-            "first-payment" => {
-                if order.order_state != OrderState::FirstPayment {
-                    return;
-                }
-                order_state_manager.validate_first_payment(bot, context_http, &mut order).await;
-                self.reply(context_http, &interaction, "First payment validated!").await;
-            },
-            "done" => {
-                if order.order_state != OrderState::InProgress {
-                    return;
-                }
-                order_state_manager.set_done(bot, context_http, &mut order).await;
-                self.reply(context_http, &interaction, "Order set as done!").await;
-            },
-            "second-payment" => {
-                if order.order_state != OrderState::SecondPayment {
-                    return;
-                }
-                order_state_manager.validate_second_payment(bot, context_http, &mut order).await;
-                self.reply(context_http, &interaction, "Second payment validated!").await;
-            },
-            "delivery" => {
-                if order.order_state != OrderState::Delivery {
-                    return;
-                }
-                order_state_manager.set_delivered(bot, context_http, &mut order).await;
-                self.reply(context_http, &interaction, "Order set as delivered!").await;
+            "validate" => {
+                order_state.validate(bot, context_http, &mut order.clone()).await;
+                self.reply(context_http, &interaction, order_state.validate_message().unwrap()).await;
             },
             "cancel" => {
                 bot.order_manager.cancel_order(bot, context_http, &mut order).await;
-                self.reply( context_http, &interaction, "Order canceled!").await;
+                self.reply( context_http, &interaction, order_state::CANCELED_STATE.validate_message().unwrap()).await;
             },
             _ => {}
         }
     }
 
-    async fn reply(&self, context_http: &ContextHTTP, interaction: &MessageComponentInteraction, content: &str) {
+    async fn reply(&self, context_http: &ContextHTTP, interaction: &MessageComponentInteraction, content: String) {
         interaction
             .create_interaction_response(context_http, |response| {
                 response
