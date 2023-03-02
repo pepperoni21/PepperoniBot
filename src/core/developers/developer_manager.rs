@@ -1,4 +1,5 @@
-use wither::Model;
+use serenity::model::prelude::UserId;
+use wither::{Model, bson::{doc, to_bson}};
 
 use crate::{bot::Bot, ContextHTTP, utils::channel_utils};
 
@@ -28,6 +29,10 @@ impl DeveloperManager {
         let assets: DeveloperAssets = DeveloperAssets { developer_list_message_id, introduction_message_id };
         let mut developer = Developer::new(user_id, introduction, assets);
         developer.save(&bot.db_info.db, None).await.expect("Failed to create developer");
+    }
+
+    pub async fn is_developer(&self, bot: &Bot, user_id: UserId) -> bool {
+        Developer::find_one(&bot.db_info.db, doc! { "user_id": to_bson(&user_id.0).unwrap() }, None).await.expect("Failed to find developer").is_some()
     }
 
 }

@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use serenity::model::prelude::{interaction::{Interaction, InteractionType, application_command::{ApplicationCommandInteraction, CommandDataOptionValue}, InteractionResponseType}};
+use serenity::model::prelude::interaction::{Interaction, InteractionType, application_command::{ApplicationCommandInteraction, CommandDataOptionValue}};
 use wither::{Model, bson::doc};
 
-use crate::{ContextHTTP, bot::Bot, core::order::models::{order::Order, order_type::OrderType}};
+use crate::{ContextHTTP, bot::Bot, core::order::models::{order::Order, order_type::OrderType}, utils::interaction_utils};
 
 pub async fn on_interaction(bot: &Bot, context_http: &ContextHTTP, interaction: Interaction) {
     if interaction.kind() != InteractionType::ApplicationCommand {
@@ -46,11 +46,7 @@ async fn on_create_command(bot: &Bot, context_http: &ContextHTTP, interaction: A
     let order_manager = &bot.order_manager;
     order_manager.create_order(bot, context_http, Arc::new(user.clone()), order_type, price, description).await;
 
-    interaction.create_interaction_response(context_http, |response| {
-        response.kind(InteractionResponseType::ChannelMessageWithSource).interaction_response_data(|data| {
-            data.content("Order created!").ephemeral(true)
-        })
-    }).await.expect("Failed to send interaction response");
+    interaction_utils::reply_application_command(context_http, &interaction, "Order created!").await;
 }
 
 async fn on_cancel_command(bot: &Bot, context_http: &ContextHTTP, interaction: ApplicationCommandInteraction) {
@@ -60,20 +56,12 @@ async fn on_cancel_command(bot: &Bot, context_http: &ContextHTTP, interaction: A
     }, None).await.expect("Failed to find order");
 
     if order.is_none() {
-        interaction.create_interaction_response(context_http, |response| {
-            response.kind(InteractionResponseType::ChannelMessageWithSource).interaction_response_data(|data| {
-                data.content("Order not found").ephemeral(true)
-            })
-        }).await.expect("Failed to send interaction response");
+        interaction_utils::reply_application_command(context_http, &interaction, "Order not found").await;
         return;
     }
 
     let mut order = order.unwrap();
     bot.order_manager.cancel_order(bot, context_http, &mut order).await;
 
-    interaction.create_interaction_response(context_http, |response| {
-        response.kind(InteractionResponseType::ChannelMessageWithSource).interaction_response_data(|data| {
-            data.content("Order removed!").ephemeral(true)
-        })
-    }).await.expect("Failed to send interaction response");
+    interaction_utils::reply_application_command(context_http, &interaction, "Order removed!").await;
 }

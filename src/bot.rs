@@ -2,7 +2,7 @@ use std::{env, sync::Arc};
 
 use serenity::{async_trait, prelude::{EventHandler, Context}, model::prelude::{Ready, GuildId, interaction::Interaction}};
 
-use crate::{core::{order::{order_manager::OrderManager, command::order_command_executor}, db, developers::developer_manager::DeveloperManager}, ContextHTTP};
+use crate::{core::{order::{order_manager::OrderManager, command::order_command_executor}, db, developers::{developer_manager::DeveloperManager, command::developer_command_executor}}, ContextHTTP};
 
 pub struct Bot {
     pub db_info: db::DBInfo,
@@ -50,5 +50,6 @@ impl EventHandler for Bot {
         self.order_manager.review_manager.listener.on_interaction(self, &context_http, interaction.clone()).await;
         self.order_manager.listener.on_interaction(self, &context_http, interaction.clone()).await;
         order_command_executor::on_interaction(&self, &context_http, interaction.clone()).await;
+        developer_command_executor::on_interaction(&self, &context_http, interaction.clone()).await;
     }
 }
