@@ -12,6 +12,10 @@ pub async fn on_interaction(bot: &Bot, context_http: &ContextHTTP, interaction: 
 
     let interaction = interaction.application_command().unwrap();
 
+    if interaction.guild_id.is_none() || interaction.guild_id.unwrap() != bot.guild_id {
+        return;
+    }
+
     if interaction.data.name != "order" {
         return;
     }

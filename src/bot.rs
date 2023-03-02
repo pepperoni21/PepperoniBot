@@ -6,6 +6,7 @@ use crate::{core::{order::{order_manager::OrderManager, command::order_command_e
 
 pub struct Bot {
     pub db_info: db::DBInfo,
+    pub guild_id: GuildId,
     pub order_manager: Arc<OrderManager>,
 }
 
@@ -13,8 +14,13 @@ impl Bot {
 
     pub async fn new() -> Self {
         let db_info = db::DBInfo::new().await;
+        let guild_id = GuildId(env::var("GUILD_ID")
+            .expect("Expected a GUILD_ID in the environment")
+            .parse()
+            .expect("GUILD_ID is not a valid ID"));
         let bot = Self {
             db_info,
+            guild_id,
             order_manager: Arc::new(OrderManager::new().await),
         };
 
@@ -24,12 +30,7 @@ impl Bot {
     async fn load(&self, context_http: ContextHTTP){
         println!("Connected to Discord!");
 
-        let guild_id = GuildId(env::var("GUILD_ID")
-            .expect("Expected a GUILD_ID in the environment")
-            .parse()
-            .expect("GUILD_ID is not a valid ID"));
-
-        self.order_manager.load(&context_http, guild_id).await;
+        self.order_manager.load(&self, &context_http).await;
     }
 
 }

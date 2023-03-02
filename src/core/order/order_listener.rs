@@ -12,6 +12,11 @@ impl OrderListener {
             return;
         }
         let interaction = interaction.message_component().unwrap();
+
+        if interaction.guild_id.is_none() || interaction.guild_id.unwrap() != bot.guild_id {
+            return;
+        }
+
         let component_id = interaction.data.custom_id.as_str();
 
         if !component_id.starts_with("order:") {

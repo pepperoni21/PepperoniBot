@@ -14,6 +14,10 @@ impl ReviewListener {
         if interaction.kind() == InteractionType::MessageComponent {
             let interaction = interaction.message_component().unwrap();
 
+            if interaction.guild_id.is_none() || interaction.guild_id.unwrap() != bot.guild_id {
+                return;
+            }
+
             let component_id = interaction.data.custom_id.as_str();
 
             match component_id {
@@ -27,6 +31,10 @@ impl ReviewListener {
             }
         } else if interaction.kind() == InteractionType::ModalSubmit {
             let interaction = interaction.modal_submit().unwrap();
+
+            if interaction.guild_id.is_none() || interaction.guild_id.unwrap() != bot.guild_id {
+                return;
+            }
 
             let component_id = interaction.data.custom_id.as_str();
 
