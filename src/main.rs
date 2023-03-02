@@ -5,6 +5,7 @@ use serenity::http::Http;
 mod connector;
 mod bot;
 mod core;
+mod utils;
 
 pub type ContextHTTP = Arc<Http>;
 

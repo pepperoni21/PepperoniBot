@@ -12,6 +12,10 @@ pub async fn on_interaction(bot: &Bot, context_http: &ContextHTTP, interaction: 
 
     let interaction = interaction.application_command().unwrap();
 
+    if interaction.guild_id.is_none() || interaction.guild_id.unwrap() != bot.guild_id {
+        return;
+    }
+
     if interaction.data.name != "order" {
         return;
     }
@@ -25,19 +29,19 @@ pub async fn on_interaction(bot: &Bot, context_http: &ContextHTTP, interaction: 
 
 
 async fn on_create_command(bot: &Bot, context_http: &ContextHTTP, interaction: ApplicationCommandInteraction) {
-    let sub_command_option = interaction.data.options.get(0).unwrap();
-    let user_option = sub_command_option.options.get(0).expect("Expected user option").resolved.as_ref().expect("Expected user option to be resolved");
+    let options = &interaction.data.options.get(0).unwrap().options;
+    let user_option = options.get(0).expect("Expected user option").resolved.as_ref().expect("Expected user option to be resolved");
     let user = match user_option {
         CommandDataOptionValue::User(u, _member) => u,
         _ => return,
     };
 
-    let order_type_option = sub_command_option.options.get(1).expect("Expected order type option").value.as_ref().expect("Expected order type option to be resolved").as_str().expect("Expected order type option to be a string");
+    let order_type_option = options.get(1).expect("Expected order type option").value.as_ref().expect("Expected order type option to be resolved").as_str().expect("Expected order type option to be a string");
     let order_type = OrderType::from_value(order_type_option);
 
-    let price: i32 = sub_command_option.options.get(2).unwrap().value.as_ref().unwrap().as_i64().unwrap() as i32;
+    let price: i32 = options.get(2).unwrap().value.as_ref().unwrap().as_i64().unwrap() as i32;
 
-    let description = sub_command_option.options.get(3).unwrap().value.as_ref().unwrap().as_str().unwrap().to_string();
+    let description = options.get(3).unwrap().value.as_ref().unwrap().as_str().unwrap().to_string();
 
     let order_manager = &bot.order_manager;
     order_manager.create_order(bot, context_http, Arc::new(user.clone()), order_type, price, description).await;

@@ -24,8 +24,8 @@ impl OrderManager {
         order_manager
     }
 
-    pub async fn load(&self, context_http: &ContextHTTP, guild_id: GuildId) {
-        order_command::load_command(context_http, &guild_id).await;
+    pub async fn load(&self, bot: &Bot, context_http: &ContextHTTP) {
+        order_command::load_command(context_http, &bot.guild_id).await;
         self.review_manager.load(&context_http).await;
     }
 

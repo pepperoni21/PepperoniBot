@@ -1,8 +1,9 @@
 use enum_iterator::all;
-use serenity::{model::prelude::{interaction::{Interaction, InteractionResponseType, message_component::MessageComponentInteraction, InteractionType, modal::ModalSubmitInteraction}, component::{InputTextStyle, ActionRowComponent}}, futures::TryStreamExt, builder::CreateSelectMenu};
+use log::error;
+use serenity::{model::prelude::{interaction::{Interaction, InteractionResponseType, message_component::MessageComponentInteraction, InteractionType, modal::ModalSubmitInteraction}, component::{InputTextStyle, ActionRowComponent}}, futures::TryStreamExt};
 use wither::{Model, bson::{doc, to_bson}};
 
-use crate::{ContextHTTP, bot::Bot, core::order::{models::order::Order, state::order_state::{self, OrderState}}};
+use crate::{ContextHTTP, bot::Bot, core::order::{models::order::Order, state::order_state::{self, OrderState}}, utils::interaction_utils};
 
 use super::models::{review::Review, review_rating::ReviewRating};
 
@@ -10,47 +11,57 @@ pub struct ReviewListener;
 
 impl ReviewListener {
 
-    pub async fn interaction_create(&self, bot: &Bot, context_http: &ContextHTTP, interaction: Interaction) {
-        if interaction.kind() == InteractionType::MessageComponent {
-            let interaction = interaction.message_component().unwrap();
+    pub async fn on_interaction(&self, bot: &Bot, context_http: &ContextHTTP, interaction: Interaction) {
+        match interaction.kind() {
+            InteractionType::MessageComponent => {
+                let interaction = interaction.message_component().unwrap();
+                
+                if interaction.guild_id.is_none() || interaction.guild_id.unwrap() != bot.guild_id {
+                    return;
+                }
 
-            let component_id = interaction.data.custom_id.as_str();
+                let component_id = interaction.data.custom_id.as_str();
 
-            match component_id {
-                "review" => self.on_review_interaction(bot, &context_http, &interaction).await,
-                "review-select-order" => self.on_review_select_order(bot, &context_http, &interaction).await,
-                _ => {}
-            }
+                match component_id {
+                    "review" => self.on_review_interaction(bot, &context_http, &interaction).await,
+                    "review-select-order" => self.on_review_select_order(bot, &context_http, &interaction).await,
+                    _ => {}
+                }
 
-            if component_id.starts_with("review-select-rating:") {
-                self.on_review_select_rating(bot, &context_http, &interaction).await;
-            }
-        } else if interaction.kind() == InteractionType::ModalSubmit {
-            let interaction = interaction.modal_submit().unwrap();
+                if component_id.starts_with("review-select-rating:") {
+                    self.on_review_select_rating(bot, &context_http, &interaction).await;
+                }
+            },
+            InteractionType::ModalSubmit => {
+                let interaction = interaction.modal_submit().unwrap();
 
-            let component_id = interaction.data.custom_id.as_str();
+                if interaction.guild_id.is_none() || interaction.guild_id.unwrap() != bot.guild_id {
+                    return;
+                }
 
-            if component_id.starts_with("review-text-input:"){
-                self.on_review_submit(bot, &context_http, &interaction).await;
-            }
+                let component_id = interaction.data.custom_id.as_str();
+
+                if component_id.starts_with("review-text-input:"){
+                    self.on_review_submit(bot, &context_http, &interaction).await;
+                }
+            },
+            _ => return,
         }
     }
 
     async fn on_review_interaction(&self, bot: &Bot, context_http: &ContextHTTP, interaction: &MessageComponentInteraction){
         let user = &interaction.user;
+
         let orders_cursor = Order::find(&bot.db_info.db, doc! {
             "customer_id": to_bson(&user.id.0).unwrap(),
             "order_state": order_state::DELIVERED_STATE.id(),
             "review": to_bson(&None::<Review>).unwrap()
         }, None).await.expect("Failed to find orders");
+
         let orders: Vec<Order> = orders_cursor.try_collect().await.expect("Failed to collect orders");
 
         if orders.is_empty() {
-            interaction.create_interaction_response(context_http, |response| {
-                response.kind(InteractionResponseType::ChannelMessageWithSource).interaction_response_data(|data| {
-                    data.content("You don't have any orders to review").ephemeral(true)
-                })
-            }).await.expect("Failed to send interaction response");
+            interaction_utils::reply_message_component(context_http, interaction, "You don't have any orders to review").await;
             return;
         }
 
@@ -59,18 +70,18 @@ impl ReviewListener {
                 data.ephemeral(true).content("Select an order to review")
                     .components(|components| {
                         components.create_action_row(|action_row| {
-                            action_row.create_select_menu(|select_menu: &mut CreateSelectMenu| {
+                            action_row.create_select_menu(|select_menu| {
                                 select_menu
-                                .custom_id("review-select-order")
-                                .placeholder("Select an order to review");
-
-                                for order in orders {
+                                    .custom_id("review-select-order")
+                                    .placeholder("Select an order to review");
+        
+                                for order in &orders {
                                     select_menu.options(|options|
                                         options.create_option(|option|
                                             option
-                                            .value(order.order_id.to_string())
-                                            .label(format!("#{}", order.order_id))
-                                            .description(order.description)
+                                                .value(&order.order_id)
+                                                .label(format_args!("#{}", order.order_id))
+                                                .description(&order.description)
                                         )
                                     );
                                 }
@@ -79,7 +90,7 @@ impl ReviewListener {
                         })
                     })
             )
-        ).await.expect("Failed to send interaction response");
+        ).await.unwrap_or_else(|e| error!("Failed to send interaction response: {}", e));
     }
 
     async fn on_review_select_order(&self, _bot: &Bot, context_http: &ContextHTTP, interaction: &MessageComponentInteraction){
@@ -155,11 +166,7 @@ impl ReviewListener {
             Ok(_) => "Your review has been added!",
             Err(_) => "An error occurred while adding your review."
         };
-        interaction.create_interaction_response(context_http, |response|
-            response.kind(InteractionResponseType::ChannelMessageWithSource).interaction_response_data(|data|
-                data.ephemeral(true).content(response_content)
-            )
-        ).await.expect("Failed to send interaction response");
+        interaction_utils::reply_modal_submit(context_http, interaction, response_content).await;
     }
 
 }
