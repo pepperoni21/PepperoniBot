@@ -6,7 +6,7 @@ use crate::{bot::Bot, ContextHTTP, utils::{channel_utils, role_utils}, core::ord
 use super::{models::{developer::Developer, developer_assets::DeveloperAssets}, developer_message_manager::DeveloperMessageManager, command::developer_command};
 
 pub async fn load(bot: &Bot, context_http: &ContextHTTP) {
-    developer_command::load_command(context_http, &bot.guild_id).await;
+    developer_command::load_command(context_http).await;
 
     let developers = Developer::find(&bot.db_info.db, None, None)
         .await
@@ -65,10 +65,11 @@ pub async fn create_developer(bot: &Bot, context_http: &ContextHTTP, user_id: u6
 
     let assets: DeveloperAssets = DeveloperAssets::new();
     let mut developer = Developer::new(user_id, assets);
-    developer.save(&bot.db_info.db, None).await.expect("Failed to create developer");
 
     DeveloperMessageManager::send_developers_channel_message(bot, context_http, &mut developer, developers_channel, true).await;
     DeveloperMessageManager::send_introduction_channel_message(bot, context_http, &mut developer, introduction_channel, true).await;
+
+    developer.save(&bot.db_info.db, None).await.expect("Failed to create developer");
 
     let mut member = bot.guild_id.member(context_http, UserId(user_id)).await.expect("Failed to fetch member");
     member.add_role(context_http, role_utils::fetch_guild_role("DEVELOPER_ROLE_ID")).await.expect("Failed to add developer role");

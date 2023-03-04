@@ -1,12 +1,11 @@
 use enum_iterator::all;
-use serenity::{model::{prelude::{GuildId, command::{CommandOptionType, CommandType}}, Permissions}, builder::CreateApplicationCommandOption};
+use serenity::{model::{prelude::command::{CommandOptionType, CommandType, Command}, Permissions}, builder::CreateApplicationCommandOption};
 
 use crate::{ContextHTTP, core::order::models::order_type::OrderType};
 
-pub async fn load_command(context_http: &ContextHTTP, guild_id: &GuildId){
-    GuildId::set_application_commands(guild_id, context_http, |commands|{
-        commands.create_application_command(|command| {
-            command
+pub async fn load_command(context_http: &ContextHTTP){
+    Command::create_global_application_command(context_http, |command|
+        command
             .name("order")
             .description("Manager orders")
             .default_member_permissions(Permissions::MOVE_MEMBERS)
@@ -19,8 +18,9 @@ pub async fn load_command(context_http: &ContextHTTP, guild_id: &GuildId){
                 fill_cancel_command(option);
                 option
             })
-        })
-    }).await.expect("Failed to load commands");
+    )
+    .await
+    .expect("Failed to load commands");
 }
 
 

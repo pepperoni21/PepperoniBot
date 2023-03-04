@@ -7,8 +7,8 @@ use crate::{ContextHTTP, bot::Bot};
 
 use super::{command::order_command, models::{order::Order, order_type::OrderType}, state::order_state::{self, OrderState}, order_message_manager, review::review_manager};
 
-pub async fn load(bot: &Bot, context_http: &ContextHTTP) {
-    order_command::load_command(context_http, &bot.guild_id).await;
+pub async fn load(context_http: &ContextHTTP) {
+    order_command::load_command(context_http).await;
     review_manager::load(&context_http).await;
 }
 
@@ -141,11 +141,11 @@ pub async fn fetch_current_orders_by_developer(bot: &Bot, developer_id: u64) -> 
     Order::find(&bot.db_info.db, doc!{
         "developer_id": to_bson(&developer_id).unwrap(),
         "order_state_id": {
-            "$ne": order_state::CANCELED_STATE.id()
+            "$nin": [
+                to_bson(&order_state::CANCELED_STATE.id()).unwrap(),
+                to_bson(&order_state::DELIVERED_STATE.id()).unwrap()
+            ]
         },
-        "order_state_id": {
-            "$ne": order_state::DELIVERED_STATE.id()
-        }
     }, None)
     .await
     .expect("Failed to fetch orders")

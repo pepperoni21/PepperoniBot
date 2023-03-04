@@ -7,7 +7,8 @@ use crate::{core::{order::{order_manager, command::order_command_executor, revie
 #[derive(Clone)]
 pub struct Bot {
     pub db_info: db::DBInfo,
-    pub guild_id: GuildId
+    pub guild_id: GuildId,
+    pub developer_mode: bool,
 }
 
 impl Bot {
@@ -18,10 +19,15 @@ impl Bot {
             .expect("Expected a GUILD_ID in the environment")
             .parse()
             .expect("GUILD_ID is not a valid ID"));
+        let developer_mode = match env::var("DEV") {
+            Ok(developer_mode) => developer_mode == "true",
+            Err(_) => false
+        };
 
         let bot = Self {
             db_info,
-            guild_id
+            guild_id,
+            developer_mode
         };
 
         bot
@@ -31,10 +37,9 @@ impl Bot {
         println!("Connected to Discord!");
 
         tokio::spawn({
-            let bot = self.clone();
             let context_http = context_http.clone();
             async move {
-                order_manager::load(&bot, &context_http).await;
+                order_manager::load(&context_http).await;
             }
         });
 
