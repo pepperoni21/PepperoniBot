@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use serenity::model::prelude::{interaction::{Interaction, InteractionType, application_command::{ApplicationCommandInteraction, CommandDataOptionValue}, InteractionResponseType}};
+use serenity::model::prelude::interaction::{Interaction, InteractionType, application_command::{ApplicationCommandInteraction, CommandDataOptionValue}};
 use wither::{Model, bson::doc};
 
-use crate::{ContextHTTP, bot::Bot, core::order::models::{order::Order, order_type::OrderType}};
+use crate::{ContextHTTP, bot::Bot, core::{order::{models::{order::Order, order_type::OrderType}, order_manager}, developers::developer_manager}, utils::interaction_utils};
 
 pub async fn on_interaction(bot: &Bot, context_http: &ContextHTTP, interaction: Interaction) {
     if interaction.kind() != InteractionType::ApplicationCommand {
@@ -29,28 +29,30 @@ pub async fn on_interaction(bot: &Bot, context_http: &ContextHTTP, interaction: 
 
 
 async fn on_create_command(bot: &Bot, context_http: &ContextHTTP, interaction: ApplicationCommandInteraction) {
-    let sub_command_option = interaction.data.options.get(0).unwrap();
-    let user_option = sub_command_option.options.get(0).expect("Expected user option").resolved.as_ref().expect("Expected user option to be resolved");
-    let user = match user_option {
+    let developer = interaction.user.clone();
+
+    if !developer_manager::is_developer(bot, developer.id).await {
+        interaction_utils::reply_application_command(context_http, &interaction, "You are not a developer!").await;
+        return;
+    }
+
+    let options = &interaction.data.options.get(0).unwrap().options;
+    let user_option = options.get(0).expect("Expected user option").resolved.as_ref().expect("Expected user option to be resolved");
+    let customer = match user_option {
         CommandDataOptionValue::User(u, _member) => u,
         _ => return,
     };
 
-    let order_type_option = sub_command_option.options.get(1).expect("Expected order type option").value.as_ref().expect("Expected order type option to be resolved").as_str().expect("Expected order type option to be a string");
+    let order_type_option = options.get(1).expect("Expected order type option").value.as_ref().expect("Expected order type option to be resolved").as_str().expect("Expected order type option to be a string");
     let order_type = OrderType::from_value(order_type_option);
 
-    let price: i32 = sub_command_option.options.get(2).unwrap().value.as_ref().unwrap().as_i64().unwrap() as i32;
+    let price: i32 = options.get(2).unwrap().value.as_ref().unwrap().as_i64().unwrap() as i32;
 
-    let description = sub_command_option.options.get(3).unwrap().value.as_ref().unwrap().as_str().unwrap().to_string();
+    let description = options.get(3).unwrap().value.as_ref().unwrap().as_str().unwrap().to_string();
 
-    let order_manager = &bot.order_manager;
-    order_manager.create_order(bot, context_http, Arc::new(user.clone()), order_type, price, description).await;
+    order_manager::create_order(bot, context_http, developer, Arc::new(customer.clone()), order_type, price, description).await;
 
-    interaction.create_interaction_response(context_http, |response| {
-        response.kind(InteractionResponseType::ChannelMessageWithSource).interaction_response_data(|data| {
-            data.content("Order created!").ephemeral(true)
-        })
-    }).await.expect("Failed to send interaction response");
+    interaction_utils::reply_application_command(context_http, &interaction, "Order created!").await;
 }
 
 async fn on_cancel_command(bot: &Bot, context_http: &ContextHTTP, interaction: ApplicationCommandInteraction) {
@@ -60,20 +62,12 @@ async fn on_cancel_command(bot: &Bot, context_http: &ContextHTTP, interaction: A
     }, None).await.expect("Failed to find order");
 
     if order.is_none() {
-        interaction.create_interaction_response(context_http, |response| {
-            response.kind(InteractionResponseType::ChannelMessageWithSource).interaction_response_data(|data| {
-                data.content("Order not found").ephemeral(true)
-            })
-        }).await.expect("Failed to send interaction response");
+        interaction_utils::reply_application_command(context_http, &interaction, "Order not found").await;
         return;
     }
 
     let mut order = order.unwrap();
-    bot.order_manager.cancel_order(bot, context_http, &mut order).await;
+    order_manager::cancel_order(bot, context_http, &mut order).await;
 
-    interaction.create_interaction_response(context_http, |response| {
-        response.kind(InteractionResponseType::ChannelMessageWithSource).interaction_response_data(|data| {
-            data.content("Order removed!").ephemeral(true)
-        })
-    }).await.expect("Failed to send interaction response");
+    interaction_utils::reply_application_command(context_http, &interaction, "Order removed!").await;
 }

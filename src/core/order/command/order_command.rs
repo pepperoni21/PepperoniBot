@@ -9,7 +9,7 @@ pub async fn load_command(context_http: &ContextHTTP, guild_id: &GuildId){
             command
             .name("order")
             .description("Manager orders")
-            .default_member_permissions(Permissions::MODERATE_MEMBERS)
+            .default_member_permissions(Permissions::MOVE_MEMBERS)
             .kind(CommandType::ChatInput)
             .create_option(|option| {
                 fill_create_command(option);
