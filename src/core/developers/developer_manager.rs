@@ -6,7 +6,6 @@ use crate::{bot::Bot, ContextHTTP, utils::{channel_utils, role_utils}, core::ord
 use super::{models::{developer::Developer, developer_assets::DeveloperAssets}, developer_message_manager::DeveloperMessageManager, command::developer_command};
 
 pub async fn load(bot: &Bot, context_http: &ContextHTTP) {
-
     developer_command::load_command(context_http, &bot.guild_id).await;
 
     let developers = Developer::find(&bot.db_info.db, None, None)
@@ -102,7 +101,7 @@ pub async fn remove_developer(bot: &Bot, context_http: &ContextHTTP, developer: 
         println!("Failed to remove developer role from {}", member.user.tag());
     }
 
-    let orders = order_manager::fetch_orders_by_developer(bot, developer.user_id).await;
+    let orders = order_manager::fetch_current_orders_by_developer(bot, developer.user_id).await;
     for mut order in orders {
         order_manager::cancel_order(bot, context_http, &mut order).await;
     }

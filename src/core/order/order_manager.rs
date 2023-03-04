@@ -137,9 +137,15 @@ pub async fn fetch_order(bot: &Bot, order_id: i32) -> Order {
     }, None).await.expect("Failed to fetch order").expect("Order not found")
 }
 
-pub async fn fetch_orders_by_developer(bot: &Bot, developer_id: u64) -> Vec<Order> {
+pub async fn fetch_current_orders_by_developer(bot: &Bot, developer_id: u64) -> Vec<Order> {
     Order::find(&bot.db_info.db, doc!{
-        "developer_id": to_bson(&developer_id).unwrap()
+        "developer_id": to_bson(&developer_id).unwrap(),
+        "order_state_id": {
+            "$ne": order_state::CANCELED_STATE.id()
+        },
+        "order_state_id": {
+            "$ne": order_state::DELIVERED_STATE.id()
+        }
     }, None)
     .await
     .expect("Failed to fetch orders")
