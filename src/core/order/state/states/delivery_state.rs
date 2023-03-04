@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use wither::Model;
 
-use crate::{core::order::{state::order_state::{OrderState, self}, models::order::Order}, bot::Bot, ContextHTTP};
+use crate::{core::order::{state::order_state::{OrderState, self}, models::order::Order, order_manager, order_message_manager}, bot::Bot, ContextHTTP};
 
 pub struct DeliveryState;
 
@@ -35,12 +35,10 @@ impl OrderState for DeliveryState {
         Some(Self::VALIDATE_ACTION_LABEL.to_string())
     }
 
-    async fn validate(&self, bot: &Bot, context_http: &ContextHTTP, order: &mut Order) {        
-        let order_manager = &bot.order_manager;
-
-        order_manager.end_order(context_http, order).await;
+    async fn validate(&self, bot: &Bot, context_http: &ContextHTTP, order: &mut Order) {
+        order_manager::end_order(context_http, order).await;
         order.set_order_state(&order_state::DELIVERED_STATE);
-        let _ = &order_manager.message_manager.add_to_archive(context_http, order).await;
+        let _ = order_message_manager::add_to_archive(context_http, order).await;
         order.save(&bot.db_info.db, None).await.expect("Failed to save order");
     }
 

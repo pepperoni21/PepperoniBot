@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use serenity::{model::prelude::GuildChannel, utils::Color};
 use wither::Model;
 
-use crate::{core::order::{state::order_state::{OrderState, self}, models::order::Order}, bot::Bot, ContextHTTP};
+use crate::{core::order::{state::order_state::{OrderState, self}, models::order::Order, order_message_manager}, bot::Bot, ContextHTTP};
 
 pub struct SecondPaymentState;
 
@@ -42,9 +42,8 @@ impl OrderState for SecondPaymentState {
         let order_channel_id = order.assets.order_channel_id.unwrap();
         let order_channel = context_http.get_channel(order_channel_id).await.expect("Failed to get order channel").guild().expect("Order channel is not a guild channel");
 
-        let msg_mng = &bot.order_manager.message_manager;
-        msg_mng.update_channel_message(context_http, order, &order_channel).await;
-        msg_mng.update_order_list_message(context_http, &order).await;
+        order_message_manager::update_channel_message(context_http, order, &order_channel).await;
+        order_message_manager::update_order_list_message(context_http, &order).await;
 
         Self::send_second_payment_message(context_http, &order_channel).await;
 

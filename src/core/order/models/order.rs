@@ -15,6 +15,7 @@ pub struct Order {
     pub order_type: OrderType,
     pub order_state_id: String,
     pub price: i32,
+    pub developer_id: u64,
     pub customer_id: u64,
     pub description: String,
     pub assets: OrderAssets,
@@ -22,7 +23,7 @@ pub struct Order {
 }
 
 impl Order {
-    pub fn new(order_type: OrderType, price: i32, customer_id: u64, description: String) -> Self {
+    pub fn new(order_type: OrderType, price: i32, developer_id: u64, customer_id: u64, description: String) -> Self {
         let order_id = rand::random::<i32>().abs();
         
         let order_state_id = order_state::initial_state().id();
@@ -35,6 +36,7 @@ impl Order {
             order_type,
             order_state_id,
             price,
+            developer_id,
             customer_id,
             description,
             assets,

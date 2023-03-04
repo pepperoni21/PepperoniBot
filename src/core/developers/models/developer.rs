@@ -10,17 +10,17 @@ pub struct Developer {
     pub id: Option<ObjectId>,
 
     pub user_id: u64,
-    pub introduction: String,
+    pub introduction: Option<String>,
 
     pub assets: DeveloperAssets
 }
 
 impl Developer {
-    pub fn new(user_id: u64, introduction: String, assets: DeveloperAssets) -> Self {
+    pub fn new(user_id: u64, assets: DeveloperAssets) -> Self {
         Self {
             id: None,
             user_id,
-            introduction,
+            introduction: None,
             assets
         }
     }

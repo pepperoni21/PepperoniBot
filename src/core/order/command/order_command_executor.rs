@@ -3,7 +3,7 @@ use std::sync::Arc;
 use serenity::model::prelude::interaction::{Interaction, InteractionType, application_command::{ApplicationCommandInteraction, CommandDataOptionValue}};
 use wither::{Model, bson::doc};
 
-use crate::{ContextHTTP, bot::Bot, core::order::models::{order::Order, order_type::OrderType}, utils::interaction_utils};
+use crate::{ContextHTTP, bot::Bot, core::{order::{models::{order::Order, order_type::OrderType}, order_manager}, developers::developer_manager}, utils::interaction_utils};
 
 pub async fn on_interaction(bot: &Bot, context_http: &ContextHTTP, interaction: Interaction) {
     if interaction.kind() != InteractionType::ApplicationCommand {
@@ -11,10 +11,6 @@ pub async fn on_interaction(bot: &Bot, context_http: &ContextHTTP, interaction: 
     }
 
     let interaction = interaction.application_command().unwrap();
-
-    if interaction.guild_id.is_none() || interaction.guild_id.unwrap() != bot.guild_id {
-        return;
-    }
 
     if interaction.data.name != "order" {
         return;
@@ -29,9 +25,16 @@ pub async fn on_interaction(bot: &Bot, context_http: &ContextHTTP, interaction: 
 
 
 async fn on_create_command(bot: &Bot, context_http: &ContextHTTP, interaction: ApplicationCommandInteraction) {
+    let developer = interaction.user.clone();
+
+    if !developer_manager::is_developer(bot, developer.id).await {
+        interaction_utils::reply_application_command(context_http, &interaction, "You are not a developer!").await;
+        return;
+    }
+
     let options = &interaction.data.options.get(0).unwrap().options;
     let user_option = options.get(0).expect("Expected user option").resolved.as_ref().expect("Expected user option to be resolved");
-    let user = match user_option {
+    let customer = match user_option {
         CommandDataOptionValue::User(u, _member) => u,
         _ => return,
     };
@@ -43,8 +46,7 @@ async fn on_create_command(bot: &Bot, context_http: &ContextHTTP, interaction: A
 
     let description = options.get(3).unwrap().value.as_ref().unwrap().as_str().unwrap().to_string();
 
-    let order_manager = &bot.order_manager;
-    order_manager.create_order(bot, context_http, Arc::new(user.clone()), order_type, price, description).await;
+    order_manager::create_order(bot, context_http, developer, Arc::new(customer.clone()), order_type, price, description).await;
 
     interaction_utils::reply_application_command(context_http, &interaction, "Order created!").await;
 }
@@ -61,7 +63,7 @@ async fn on_cancel_command(bot: &Bot, context_http: &ContextHTTP, interaction: A
     }
 
     let mut order = order.unwrap();
-    bot.order_manager.cancel_order(bot, context_http, &mut order).await;
+    order_manager::cancel_order(bot, context_http, &mut order).await;
 
     interaction_utils::reply_application_command(context_http, &interaction, "Order removed!").await;
 }
