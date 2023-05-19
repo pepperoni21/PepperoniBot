@@ -37,7 +37,7 @@ impl OrderState for InProgressState {
     }
 
     async fn validate(&self, bot: &Bot, context_http: &ContextHTTP, order: &mut Order) {
-        order.set_order_state(&order_state::SECOND_PAYMENT_STATE);
+        order.set_order_state(&order_state::PAYMENT_STATE);
 
         let order_channel_id = order.assets.order_channel_id.unwrap();
         let order_channel = context_http.get_channel(order_channel_id).await.expect("Failed to get order channel").guild().expect("Order channel is not a guild channel");
