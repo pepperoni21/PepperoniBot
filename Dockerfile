@@ -1,36 +1,29 @@
 # Build stage
-FROM rust:slim-buster AS BUILD
+FROM rust:1.69-slim AS BUILD
+WORKDIR /usr/src
+
+RUN USER=root cargo new pepperoni_bot
+
+RUN USER=root apt update && apt install -y musl-tools
+
+COPY Cargo.toml Cargo.lock /usr/src/pepperoni_bot/
+
 WORKDIR /usr/src/pepperoni_bot
 
-# Copy manifests
-COPY ./Cargo.lock ./Cargo.lock
-COPY ./Cargo.toml ./Cargo.toml
+RUN rustup target add x86_64-unknown-linux-musl
 
-# Create a dummy source file to cache dependencies
-RUN mkdir src
-RUN echo "fn main() {}" > src/main.rs
+RUN cargo build --target x86_64-unknown-linux-musl --release
 
-# Cache dependencies
-RUN cargo build --release
-RUN rm src/*.rs
+COPY src /usr/src/pepperoni_bot/src/
 
-# Remove dummy source file
-RUN rm -r src
+RUN touch /usr/src/pepperoni_bot/src/main.rs
 
-# Copy source code
-COPY ./src ./src
+RUN cargo build --target x86_64-unknown-linux-musl --release
 
-# Actual build
-RUN rm ./target/release/deps/pepperoni_bot*
-RUN cargo build --release
+FROM alpine:3.17.3 AS RUNTIME
 
-# Package stage
-FROM rust:slim-buster AS PACKAGE
+COPY --from=BUILD /usr/src/pepperoni_bot/target/x86_64-unknown-linux-musl/release/pepperoni_bot /usr/local/bin
 
-# Copy binary
-COPY --from=BUILD /usr/src/pepperoni_bot/target/release/pepperoni_bot .
+COPY .env .env
 
-# Copy env file
-COPY .env .
-
-CMD ["./pepperoni_bot"]
+CMD ["/usr/local/bin/pepperoni_bot"]

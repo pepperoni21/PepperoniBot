@@ -3,7 +3,7 @@ use std::{env, sync::Arc};
 use serenity::{model::{prelude::{GuildId, PermissionOverwrite, PermissionOverwriteType, GuildChannel, RoleId}, user::User, Permissions}, futures::StreamExt};
 use wither::{Model, bson::{doc, to_bson}};
 
-use crate::{ContextHTTP, bot::Bot};
+use crate::{ContextHTTP, bot::Bot, utils::role_utils::fetch_guild_role};
 
 use super::{command::order_command, models::{order::Order, order_type::OrderType}, state::order_state::{self, OrderState}, order_message_manager, review::review_manager};
 
@@ -35,25 +35,15 @@ pub async fn create_order(bot: &Bot, context_http: &ContextHTTP, developer: User
         PermissionOverwrite {
             allow: Permissions::empty(),
             deny: Permissions::VIEW_CHANNEL,
-            kind: PermissionOverwriteType::Role(RoleId(1047410767902814238)),
+            kind: PermissionOverwriteType::Role(fetch_guild_role("EVERYONE_ROLE_ID")),
         },
         PermissionOverwrite {
-            allow: Permissions::VIEW_CHANNEL,
+            allow: Permissions::VIEW_CHANNEL | Permissions::SEND_MESSAGES,
             deny: Permissions::empty(),
             kind: PermissionOverwriteType::Member(customer.id),
         },
         PermissionOverwrite {
-            allow: Permissions::SEND_MESSAGES,
-            deny: Permissions::empty(),
-            kind: PermissionOverwriteType::Member(customer.id),
-        },
-        PermissionOverwrite {
-            allow: Permissions::VIEW_CHANNEL,
-            deny: Permissions::empty(),
-            kind: PermissionOverwriteType::Member(developer.id),
-        },
-        PermissionOverwrite {
-            allow: Permissions::SEND_MESSAGES,
+            allow: Permissions::VIEW_CHANNEL | Permissions::SEND_MESSAGES,
             deny: Permissions::empty(),
             kind: PermissionOverwriteType::Member(developer.id),
         }];
