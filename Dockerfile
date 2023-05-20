@@ -24,6 +24,6 @@ FROM alpine:3.17.3 AS RUNTIME
 
 COPY --from=BUILD /usr/src/pepperoni_bot/target/x86_64-unknown-linux-musl/release/pepperoni_bot /usr/local/bin
 
-COPY .env .env
+COPY ./*.env .
 
 CMD ["/usr/local/bin/pepperoni_bot"]

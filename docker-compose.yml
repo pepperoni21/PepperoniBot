@@ -6,6 +6,8 @@ services:
       - db
     networks:
       - bot-db
+    environment:
+      DEV: "true"
   db:
     image: mongo
     restart: always

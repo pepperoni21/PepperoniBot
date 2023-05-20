@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, env};
 
 use serenity::http::Http;
 
@@ -11,7 +11,14 @@ pub type ContextHTTP = Arc<Http>;
 
 #[tokio::main]
 async fn main() {
-    dotenv::dotenv().ok();
+    let dev: bool = env::var("DEV").unwrap_or("false".to_string()).parse().unwrap();
+    if dev {
+        dotenv::from_filename("dev.env").ok();
+    } else {
+        dotenv::dotenv().ok();
+    }
+
+    println!("Starting up in {} mode!", if dev { "dev" } else { "prod" });
 
     println!("Connecting to Discord!");
     connector::connect().await;
