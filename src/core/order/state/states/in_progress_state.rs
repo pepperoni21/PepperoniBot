@@ -63,7 +63,7 @@ impl InProgressState {
             message.embed(|embed|
                 embed
                 .title("Order done!")
-                .description("Please send the rest of the money with the link in the pinned message.")
+                .description("Please send the money with the link in the pinned message.")
                 .colour(Color::DARK_GREEN)
             )
         ).await.expect("Failed to send message");

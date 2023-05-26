@@ -12,6 +12,7 @@ pub fn order_channel_message(order: &Order) -> CreateEmbed {
     create_embed.fields(vec![
         ("Type", order.order_type.get_display_name(), true),
         ("Price", format!("{} USD", order.price.to_string()), true),
+        ("Description", order.description.clone(), false)
     ]);
 
     let order_state = order.get_order_state().unwrap();
@@ -67,6 +68,7 @@ pub async fn order_list_message(order: &Order, developer: &User, customer: &User
         ("Price", format!("{}$", order.price.to_string()), false),
         ("Channel", channel.mention().to_string(), false),
         ("State", order_state.short_name(), false),
+        ("Description", order.description.clone(), false)
     ]);
 
     create_embed
