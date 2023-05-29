@@ -17,7 +17,7 @@ pub fn order_channel_message(order: &Order) -> CreateEmbed {
 
     let order_state = order.get_order_state().unwrap();
 
-    create_embed.description(order_state.instruction().unwrap().replace("%price%", &(order.price / 2).to_string()));
+    create_embed.description(order_state.instruction().unwrap().replace("%price%", &(order.price).to_string()));
     create_embed
 }
 
