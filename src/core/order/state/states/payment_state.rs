@@ -9,7 +9,7 @@ pub struct PaymentState;
 impl PaymentState {
     pub const ID: &'static str = "payment";
     pub const SHORT_NAME: &'static str = "Waiting payment";
-    pub const INSTRUCTION: &'static str = "Please process the payment of %price% USD to the following address: pariselias00@gmail.com";
+    pub const INSTRUCTION: &'static str = "Please process the payment of %price% USD to the following address: pepperoni2100@gmail.com";
     pub const VALIDATE_ACTION_LABEL: &'static str = "Set payment paid";
 }
 
